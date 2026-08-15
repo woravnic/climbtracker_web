@@ -1,0 +1,39 @@
+# Climb Tracker PWA
+
+A local-first Progressive Web App port of the Android Climbtracker project.
+
+## Run locally on Windows
+
+You need to serve the folder over HTTP (service workers do not work reliably from `file://`). From this folder, use either:
+
+```powershell
+py -m http.server 8000
+```
+
+or, if Node.js is installed:
+
+```powershell
+npx serve .
+```
+
+Then open `http://localhost:8000` (or the URL shown by `serve`).
+
+## Put it on an iPhone
+
+For iPhone installation, deploy this folder to any HTTPS static host such as GitHub Pages, Cloudflare Pages, Netlify, or Vercel. Open the HTTPS site in Safari, tap Share, then **Add to Home Screen**.
+
+## Data
+
+- Data is stored locally in the browser using `localStorage`.
+- The Stats settings menu can export/import the same `[CLIMBS]` / `[LOGS]` CSV format used by the Android app.
+- Export regular CSV backups. Clearing browser/site data can erase local data.
+
+## Included features
+
+- Log Boulder and Sport climbs
+- Grade, gym, incline, hold type, key move, notes, attempts, flash/project status
+- Active projects and attempt tracking
+- Climbing statistics and grade distribution
+- Daily calories, calorie history, weight, calorie goal, 7-day averages
+- Android-compatible CSV import/export
+- PWA manifest, app icon, offline service worker
