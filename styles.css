@@ -591,4 +591,72 @@ body::-webkit-scrollbar {
 #app > .stack {
   align-content: start;
 }
-\n\n/* Projects: app-style card controls and swipe-to-delete. */\n.project-gym-climbs .project-swipe-row {\n  border: 0;\n  border-radius: 14px;\n  background: var(--surface2);\n}\n.project-gym-climbs .project-swipe-row .swipe-delete-action {\n  border-radius: 0 14px 14px 0;\n}\n.project-gym-climbs .project-card {\n  position: relative;\n  min-height: 132px;\n  padding: 14px;\n  padding-right: 54px;\n  border: 0;\n  border-radius: 14px;\n}\n.project-card-main {\n  display: grid;\n  gap: 2px;\n}\n.project-type-label {\n  line-height: 1.25;\n}\n.project-attempt-count {\n  margin-top: 2px;\n  font-size: 13px;\n  line-height: 1.25;\n}\n.project-description {\n  margin-top: 9px;\n  padding-right: 4px;\n}\n.project-send-btn {\n  position: absolute;\n  z-index: 3;\n  top: 12px;\n  right: 12px;\n  width: 36px;\n  height: 36px;\n  display: grid;\n  place-items: center;\n  padding: 0;\n  border: 0;\n  border-radius: 50%;\n  background: var(--accent);\n  color: #17100b;\n  font-size: 21px;\n  font-weight: 800;\n  line-height: 1;\n  touch-action: manipulation;\n  -webkit-tap-highlight-color: transparent;\n}\n.project-card-actions {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n.project-attempt-btn {\n  margin-left: auto;\n}\n
+
+/* Projects: app-style card controls and swipe-to-delete. */
+.project-gym-climbs .project-swipe-row {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.project-gym-climbs .project-swipe-row .swipe-delete-action {
+  z-index: 1;
+  border-radius: 0 14px 14px 0;
+}
+.project-gym-climbs .project-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 132px;
+  padding: 14px 54px 14px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.project-card-main {
+  display: grid;
+  gap: 2px;
+}
+.project-type-label {
+  line-height: 1.25;
+}
+.project-attempt-count {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.project-description {
+  margin-top: 9px;
+  padding-right: 4px;
+}
+.project-send-btn {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #17100b;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.project-card-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 14px;
+}
+.project-attempt-btn {
+  margin-left: auto;
+}
