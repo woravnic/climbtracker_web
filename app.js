@@ -132,7 +132,7 @@ function logSummaryBanner(){const completed=state.climbs.filter(c=>!c.isProject&
 function renderLog(){const groups=sessionGroups();app.innerHTML=`<div class="stack"><div class="segmented log-type-tabs"><button onclick="logType='Boulder';renderLog()" class="${logType==='Boulder'?'active':''}">Boulder</button><button onclick="logType='Sport';renderLog()" class="${logType==='Sport'?'active':''}">Sport</button></div>${logSummaryBanner()}${groups.length?groups.map(sessionCard).join(''):`<div class="empty">No ${logType.toLowerCase()} climbs yet. Tap + to log your first climb.</div>`}</div><button class="fab" onclick="showClimbForm(null,false,'${logType}')">+</button>`;setupClimbSwipeDelete()}
 function sessionCard(session){const {date,gym,climbs:cs}=session,hard=getHardest(cs);return `<details class="card session-card"><summary class="session-summary"><div><strong>${esc(gym)}</strong><div class="muted">${ymd(date)} · ${cs.length} climb${cs.length===1?'':'s'}</div></div><div class="session-summary-right"><div><small class="muted">Hardest</small><div class="accent">${hard?displayGrade(hard):'—'}</div></div><span class="session-chevron">⌄</span></div></summary><div class="session-climbs">${cs.map(c=>climbRow(c)).join('')}</div></details>`}
 function climbRow(c){return `<div class="swipe-delete-row" data-climb-id="${c.id}"><button class="swipe-delete-action" type="button" aria-label="Delete ${displayGrade(c)} climb">Delete</button><div class="climb-row clickable swipe-delete-content"><div class="row"><div class="grade">${displayGrade(c)}</div><div style="flex:1"><strong>${esc(c.gym||c.type)}</strong><div class="muted">${c.incline?esc(c.incline)+' · ':''}${c.isFlash?'<span class="flash">Flash! ✨</span>':`${c.attempts} attempt${c.attempts===1?'':'s'}`}</div></div><span>›</span></div></div></div>`}
-function setupClimbSwipeDelete(){let openRow=null;const closeRow=(row,animate=true)=>{if(!row)return;const content=row.querySelector('.swipe-delete-content');content.style.transition=animate?'transform 180ms cubic-bezier(.22,.8,.32,1)':'none';content.style.transform='translate3d(0,0,0)';row.classList.remove('delete-open');if(openRow===row)openRow=null};document.querySelectorAll('.swipe-delete-row').forEach(row=>{const content=row.querySelector('.swipe-delete-content'),del=row.querySelector('.swipe-delete-action');let start=null,moved=false;content.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;if(openRow&&openRow!==row)closeRow(openRow);start={id:e.pointerId,x:e.clientX,y:e.clientY,base:row.classList.contains('delete-open')?-86:0,mode:null};moved=false;content.style.transition='none';try{content.setPointerCapture(e.pointerId)}catch(_){}});content.addEventListener('pointermove',e=>{if(!start||e.pointerId!==start.id)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(!start.mode&&Math.max(Math.abs(dx),Math.abs(dy))>8)start.mode=Math.abs(dx)>Math.abs(dy)*1.15?'horizontal':'vertical';if(start.mode==='vertical'){start=null;return}if(start.mode!=='horizontal')return;e.preventDefault();moved=true;const x=Math.max(-100,Math.min(0,start.base+dx));content.style.transform=`translate3d(${x}px,0,0)`});const finish=e=>{if(!start||e.pointerId!==start.id)return;const dx=e.clientX-start.x,mode=start.mode,wasOpen=start.base<0;start=null;if(mode!=='horizontal'){content.style.transition='';return}const shouldOpen=wasOpen?dx<34:dx<-42;content.style.transition='transform 180ms cubic-bezier(.22,.8,.32,1)';content.style.transform=shouldOpen?'translate3d(-86px,0,0)':'translate3d(0,0,0)';row.classList.toggle('delete-open',shouldOpen);openRow=shouldOpen?row:null};content.addEventListener('pointerup',finish);content.addEventListener('pointercancel',e=>{if(start&&e.pointerId===start.id){start=null;closeRow(row)}});content.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;return}if(row.classList.contains('delete-open')){e.preventDefault();closeRow(row);return}showClimbForm(Number(row.dataset.climbId))});del.addEventListener('click',e=>{e.stopPropagation();const id=Number(row.dataset.climbId);state.climbs=state.climbs.filter(c=>c.id!==id);save()})});document.addEventListener('pointerdown',e=>{if(openRow&&!e.target.closest('.swipe-delete-row'))closeRow(openRow)},{once:true})}
+function setupClimbSwipeDelete(){let openRow=null;const closeRow=(row,animate=true)=>{if(!row)return;const content=row.querySelector('.swipe-delete-content');content.style.transition=animate?'transform 180ms cubic-bezier(.22,.8,.32,1)':'none';content.style.transform='translate3d(0,0,0)';row.classList.remove('delete-open');if(openRow===row)openRow=null};document.querySelectorAll('.swipe-delete-row').forEach(row=>{const content=row.querySelector('.swipe-delete-content'),del=row.querySelector('.swipe-delete-action');let start=null,moved=false;content.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;if(openRow&&openRow!==row)closeRow(openRow);start={id:e.pointerId,x:e.clientX,y:e.clientY,base:row.classList.contains('delete-open')?-86:0,mode:null};moved=false;content.style.transition='none';try{content.setPointerCapture(e.pointerId)}catch(_){}});content.addEventListener('pointermove',e=>{if(!start||e.pointerId!==start.id)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(!start.mode&&Math.max(Math.abs(dx),Math.abs(dy))>8)start.mode=Math.abs(dx)>Math.abs(dy)*1.15?'horizontal':'vertical';if(start.mode==='vertical'){start=null;return}if(start.mode!=='horizontal')return;e.preventDefault();moved=true;const x=Math.max(-100,Math.min(0,start.base+dx));content.style.transform=`translate3d(${x}px,0,0)`});const finish=e=>{if(!start||e.pointerId!==start.id)return;const dx=e.clientX-start.x,mode=start.mode,wasOpen=start.base<0;start=null;if(mode!=='horizontal'){content.style.transition='';return}const shouldOpen=wasOpen?dx<34:dx<-42;content.style.transition='transform 180ms cubic-bezier(.22,.8,.32,1)';content.style.transform=shouldOpen?'translate3d(-86px,0,0)':'translate3d(0,0,0)';row.classList.toggle('delete-open',shouldOpen);openRow=shouldOpen?row:null};content.addEventListener('pointerup',finish);content.addEventListener('pointercancel',e=>{if(start&&e.pointerId===start.id){start=null;closeRow(row)}});content.addEventListener('pointerdown',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;return}if(row.classList.contains('delete-open')){e.preventDefault();closeRow(row);return}showClimbForm(Number(row.dataset.climbId))});del.addEventListener('pointerdown',e=>{e.stopPropagation();const id=Number(row.dataset.climbId);state.climbs=state.climbs.filter(c=>c.id!==id);save()})});document.addEventListener('pointerdown',e=>{if(openRow&&!e.target.closest('.swipe-delete-row'))closeRow(openRow)},{once:true})}
 function gradeLabel(type,grade){return type==='Boulder'?`V${grade}`:`5.${grade}`}
 function rememberedGrade(type){const key=`climbtracker.lastGrade.${type}`;const saved=localStorage.getItem(key),grades=type==='Boulder'?boulder:sport;if(saved&&grades.includes(saved))return saved;const recent=[...state.climbs].filter(c=>c.type===type).sort((a,b)=>b.date-a.date)[0];return recent&&grades.includes(recent.grade)?recent.grade:grades[0]}
 function rememberGrade(type,grade){localStorage.setItem(`climbtracker.lastGrade.${type}`,grade)}
@@ -158,7 +158,7 @@ function filteredStats(){return state.climbs.filter(c=>{
   if(statsMove&&!moves.includes(statsMove))return false;
   return true;
 })}
-function __original_renderStats(){const all=state.climbs.filter(c=>!c.isProject&&c.type===statsType),grades=[...new Set(all.map(c=>c.grade))].sort((a,b)=>gradeScore(a)-gradeScore(b)),cs=filteredStats(),sessions=new Set(cs.map(c=>dayStart(new Date(c.date)))),hard=getHardest(cs),flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{}),max=Math.max(1,...Object.values(counts));app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>${grades.length?`<div class="chips"><button class="chip ${statsGrade===null?'on':''}" onclick="statsGrade=null;renderStats()">All</button>${grades.map(g=>`<button class="chip ${statsGrade===g?'on':''}" onclick="statsGrade='${g}';renderStats()">${statsType==='Boulder'?'V':'5.'}${g}</button>`).join('')}</div>`:''}<div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div><div class="card"><h3>Grade Distribution</h3><div class="bar-wrap" style="margin-top:14px">${Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>`<div class="bar-row"><span>${statsType==='Boulder'?'V':'5.'}${g}</span><div class="bar"><i style="width:${counts[g]/max*100}%"></i></div><b>${counts[g]}</b></div>`).join('')||'<div class="empty">No data</div>'}</div></div></div>`}
+function __original_renderStats(){const all=state.climbs.filter(c=>!c.isProject&&c.type===statsType),grades=[...new Set(all.map(c=>c.grade))].sort((a,b)=>gradeScore(a)-gradeScore(b)),cs=filteredStats(),sessions=new Set(cs.map(c=>dayStart(new Date(c.date)))),hard=getHardest(cs),flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{}),max=Math.max(1,...Object.values(counts));app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>${grades.length?`<div class="chips"><button class="chip ${statsGrade===null?'on':''}" onclick="statsGrade=null;renderStats()"></button>${grades.map(g=>`<button class="chip ${statsGrade===g?'on':''}" onclick="statsGrade='${g}';renderStats()">${statsType==='Boulder'?'V':'5.'}${g}</button>`).join('')}</div>`:''}<div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div><div class="card"><h3>Grade Distribution</h3><div class="bar-wrap" style="margin-top:14px">${Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>`<div class="bar-row"><span>${statsType==='Boulder'?'V':'5.'}${g}</span><div class="bar"><i style="width:${counts[g]/max*100}%"></i></div><b>${counts[g]}</b></div>`).join('')||'<div class="empty">No data</div>'}</div></div></div>`}
 
 
 function statsFilterChip(label,value,current,setter){
@@ -174,6 +174,62 @@ function makeVerticalGradeChart(items){
   const max=Math.max(1,...items.map(x=>x.value));
   return `<div class="vertical-grade-chart" role="img" aria-label="Grade distribution"><div class="vertical-grade-bars">${items.map(item=>`<div class="vertical-grade-col"><div class="vertical-grade-value">${item.value}</div><div class="vertical-grade-track"><div class="vertical-grade-fill" style="height:${Math.max(5,item.value/max*100)}%"></div></div><div class="vertical-grade-label">${esc(item.label)}</div></div>`).join('')}</div></div>`;
 }
+
+function bindStatsFilterChips(root) {
+  if (!root || root._statsFiltersBound) return;
+  root._statsFiltersBound = true;
+
+  root.addEventListener('click', (e) => {
+    const chip = e.target.closest('.stats-filter-chip');
+    if (!chip) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const key = chip.dataset.filterKey;
+    const value = chip.dataset.filterValue;
+    if (!key || !value) return;
+
+    if (!window.statsFilters) window.statsFilters = {};
+    const current = new Set(window.statsFilters[key] || []);
+    if (current.has(value)) current.delete(value);
+    else current.add(value);
+    window.statsFilters[key] = [...current];
+
+    chip.classList.toggle('selected', current.has(value));
+
+    if (typeof renderStats === 'function') renderStats();
+    else if (typeof renderStatsPage === 'function') renderStatsPage();
+  });
+}
+
+
+function applyStatsTagFilters(climbs) {
+  const f = window.statsFilters || {};
+  const arr = Array.isArray(climbs) ? climbs : [];
+  return arr.filter(c => {
+    const matchSingle = (key, raw) => {
+      const selected = f[key] || [];
+      if (!selected.length) return true;
+      return selected.includes(String(raw || '').trim());
+    };
+    const matchMulti = (key, raw) => {
+      const selected = f[key] || [];
+      if (!selected.length) return true;
+      let vals = raw;
+      if (!Array.isArray(vals)) vals = String(vals || '').split(/[|,;]/).map(s=>s.trim()).filter(Boolean);
+      return selected.every(v => vals.includes(v));
+    };
+
+    if (!matchSingle('grade', c.grade)) return false;
+    if (!matchSingle('gym', c.gym)) return false;
+    if (!matchSingle('incline', c.incline)) return false;
+    if (!matchSingle('type', c.type || c.climbType)) return false;
+    if (!matchMulti('holdTypes', c.holdTypes)) return false;
+    if (!matchMulti('keyMoves', c.keyMoves)) return false;
+    return true;
+  });
+}
+
 function renderStats(){
   const base=state.climbs.filter(c=>!c.isProject&&c.type===statsType);
   const grades=[...new Set(base.map(c=>c.grade).filter(Boolean))].sort((a,b)=>gradeScore(a)-gradeScore(b));
@@ -197,6 +253,8 @@ function renderStats(){
   <div class="stats-chart-card"><div class="stats-chart-title">Inclines</div>${makeStatPieChart(inclineItems,{ariaLabel:'Incline distribution',centerLabel:'Climbs'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Hold Types</div>${makeStatPieChart(holdItems,{ariaLabel:'Hold type distribution',centerLabel:'Uses'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Key Moves</div>${makeStatPieChart(moveItems,{ariaLabel:'Key move distribution',centerLabel:'Uses'})}</div></div>`;
+
+  bindStatsFilterChips(document.querySelector('#app'));
 }
 
 function todayLog(){return state.logs.find(l=>l.date===dayStart())}
@@ -205,6 +263,19 @@ function dateInputValue(ts){const d=new Date(ts),p=n=>String(n).padStart(2,'0');
 function dateInputToDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():dayStart()}
 function selectedCalorieLog(){return state.logs.find(l=>dayStart(new Date(l.date))===calorieEntryDate)}
 function setBodyChartRange(days){bodyChartRange=days;renderBody()}
+
+function installPersistentChartTooltipDismissal(container, hideTooltip) {
+  if (!container) return;
+  if (container._tooltipDismissHandler) {
+    document.removeEventListener('pointerdown', container._tooltipDismissHandler, true);
+  }
+  const handler = (e) => {
+    if (!container.contains(e.target)) hideTooltip();
+  };
+  container._tooltipDismissHandler = handler;
+  document.addEventListener('pointerdown', handler, true);
+}
+
 function bodyScatterPlot(field,unit){
   const days=bodyChartRange,end=dayStart(),start=end-(days-1)*86400000;
   const points=state.logs.filter(l=>{const d=dayStart(new Date(l.date)),v=l[field];return d>=start&&d<=end&&v!=null&&Number.isFinite(Number(v))}).map(l=>({date:dayStart(new Date(l.date)),value:Number(l[field])})).sort((a,b)=>a.date-b.date);
@@ -220,7 +291,7 @@ function bodyScatterPlot(field,unit){
 }
 function showBodyChartPoint(group){const wrap=group.closest('.interactive-chart'),tip=wrap?.querySelector('.chart-tooltip');if(!wrap||!tip)return;document.querySelectorAll('.chart-point.active').forEach(x=>x.classList.remove('active'));group.querySelector('.chart-point')?.classList.add('active');const date=ymd(Number(group.dataset.date)),value=Number(group.dataset.value),field=group.dataset.field,unit=group.dataset.unit;tip.innerHTML=`<strong>${esc(date)}</strong><span>${field==='weight'?value.toFixed(1):Math.round(value)} ${esc(unit)}</span>`;tip.hidden=false;const point=group.querySelector('.chart-point'),pr=point.getBoundingClientRect(),wr=wrap.getBoundingClientRect();requestAnimationFrame(()=>{const tr=tip.getBoundingClientRect();let left=pr.left-wr.left+pr.width/2-tr.width/2;left=Math.max(6,Math.min(wrap.clientWidth-tr.width-6,left));tip.style.left=`${left}px`;tip.style.top=`${Math.max(4,pr.top-wr.top-tr.height-8)}px`})}
 function bindBodyChartPoints(){document.querySelectorAll('.chart-point-group').forEach(group=>{let down=null;group.addEventListener('pointerdown',e=>{e.stopPropagation();down={x:e.clientX,y:e.clientY,id:e.pointerId}},{passive:true});group.addEventListener('pointerup',e=>{e.stopPropagation();if(!down||down.id!==e.pointerId)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved<12)showBodyChartPoint(group)});group.addEventListener('pointercancel',()=>down=null)})}
-document.addEventListener('click' ,e=>{if(e.target.closest('.chart-point-tap'))return;document.querySelectorAll('.chart-tooltip').forEach(t=>t.hidden=true);document.querySelectorAll('.chart-point.active').forEach(x=>x.classList.remove('active'))});
+document.addEventListener('pointerdown',e=>{if(e.target.closest('.chart-point-tap'))return;document.querySelectorAll('.chart-tooltip').forEach(t=>t.hidden=true);document.querySelectorAll('.chart-point.active').forEach(x=>x.classList.remove('active'))});
 function renderBody(){const t=todayLog(),selected=selectedCalorieLog(),hist=(selected?.calorieHistory||'').split(',').filter(Boolean),past=[...state.logs].filter(l=>l.date<dayStart()).sort((a,b)=>b.date-a.date),weights=past.map(l=>l.weight).filter(x=>x!=null).slice(0,7),cals=past.map(l=>l.calories).filter(x=>x!=null).slice(0,7),aw=weights.length?weights.reduce((a,b)=>a+b,0)/weights.length:null,ac=cals.length?cals.reduce((a,b)=>a+b,0)/cals.length:null,goal=state.calorieGoal||0,isToday=calorieEntryDate===dayStart(),selectedLabel=isToday?'Today':ymd(calorieEntryDate);app.innerHTML=`<div class="stack"><div class="card"><div class="row between"><h3 class="accent">Today's Total: ${t?.calories||0} Cals</h3>${goal?`<span class="muted">Goal ${goal}</span>`:''}</div>${goal?`<div class="progress" style="margin-top:10px"><i style="width:${Math.min(100,(t?.calories||0)/goal*100)}%"></i></div>`:''}<div class="muted" style="margin-top:14px">Adding calories to <strong>${esc(selectedLabel)}</strong></div><div class="row" style="margin-top:10px"><input id="calInput" type="number" min="0" inputmode="numeric" placeholder="Add Calories"><button class="btn" onclick="addCalories()">Add</button></div><div class="muted" style="margin-top:8px">${esc(selectedLabel)} total: ${selected?.calories||0} Cals</div>${hist.length?`<div style="margin-top:12px">${hist.map((x,i)=>`<div class="cal-history row between"><span>Entry ${i+1}: ${x} Calories</span><button class="btn secondary" onclick="deleteCal(${i})">Delete</button></div>`).join('')}</div>`:''}</div><div class="card">${t?.weight!=null?`<div class="row between"><div><small class="muted">Today's Weight</small><div class="big">${t.weight} lbs</div></div><button class="btn secondary" onclick="showWeightForm()">Edit</button></div>`:`<div class="row"><input id="weightInput" type="number" step="0.1" inputmode="decimal" placeholder="Today's Weight (lbs)"><button class="btn" onclick="saveWeight()">Save</button></div>`}</div><div class="metric-grid"><div class="metric"><small>7-Day Avg Weight</small><strong>${aw!=null?aw.toFixed(1)+' lbs':'—'}</strong></div><div class="metric"><small>7-Day Avg Cals</small><strong>${ac!=null?Math.round(ac):'—'}</strong></div></div><div class="card body-chart-panel"><div class="row between chart-toolbar"><h3>History</h3><div class="segmented chart-range"><button onclick="setBodyChartRange(7)" class="${bodyChartRange===7?'active':''}">7 Days</button><button onclick="setBodyChartRange(30)" class="${bodyChartRange===30?'active':''}">1 Month</button></div></div><div class="body-chart-block"><div class="row between"><strong>Calories</strong><span class="muted">cal/day</span></div>${bodyScatterPlot('calories','cal')}</div><div class="body-chart-block"><div class="row between"><strong>Weight</strong><span class="muted">lbs</span></div>${bodyScatterPlot('weight','lb')}</div></div><div class="card"><h3>Recent Logs</h3>${state.logs.length?[...state.logs].sort((a,b)=>b.date-a.date).slice(0,10).map(l=>{const d=dayStart(new Date(l.date)),active=d===calorieEntryDate;return `<button type="button" class="climb-row row between body-log-row${active?' selected':''}" onclick="selectCalorieLog(${d})"><span>${ymd(l.date)}</span><span class="muted">${l.calories??'—'} cal · ${l.weight??'—'} lb</span></button>`}).join(''):'<div class="empty">No logs yet.</div>'}</div></div>`}
 function selectCalorieLog(date){calorieEntryDate=dayStart(new Date(date));renderBody()}
 function addCalories(){const n=parseInt(document.querySelector('#calInput').value);if(!Number.isFinite(n))return;const d=calorieEntryDate,l=state.logs.find(x=>dayStart(new Date(x.date))===d),arr=(l?.calorieHistory||'').split(',').filter(Boolean);arr.push(String(n));upsertLog(d,{calories:(l?.calories||0)+n,calorieHistory:arr.join(',')});save()}

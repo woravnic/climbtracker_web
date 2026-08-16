@@ -345,3 +345,140 @@ dialog:has(#climbForm) .modal-body{
 .chart-point-hit{fill:transparent;stroke:none;pointer-events:all;touch-action:manipulation}
 .chart-point-group{cursor:pointer;touch-action:manipulation}
 .chart-point{pointer-events:none}
+
+
+/* Stats mobile layout + reliable filter chips */
+.stats-filter-panel,
+.stats-filters,
+.climb-stats-filters {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.stats-filter-group {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.stats-filter-label {
+  font-size: .78rem;
+  font-weight: 700;
+  opacity: .72;
+  margin: 0 0 7px 2px;
+}
+
+.stats-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.stats-filter-chip {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.05);
+  color: inherit;
+  border-radius: 999px;
+  padding: 7px 11px;
+  min-height: 36px;
+  max-width: 100%;
+  font: inherit;
+  font-size: .8rem;
+  line-height: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stats-filter-chip.selected {
+  border-color: var(--accent, #f59e0b);
+  background: rgba(245, 158, 11, .15);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, .18);
+}
+
+.climb-stats-charts,
+.stats-chart-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.stats-chart-card {
+  overflow: hidden;
+}
+
+.stat-bar-vertical-chart {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stat-pie-layout {
+  min-width: 0;
+}
+
+.stat-pie-legend {
+  min-width: 0;
+}
+
+.stat-pie-legend-row {
+  min-width: 0;
+}
+
+.stat-pie-name {
+  min-width: 0;
+}
+
+/* Sticky chart tooltip: stay visible after point tap */
+.chart-tooltip {
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.chart-point-hit {
+  touch-action: manipulation;
+}
+
+@media (max-width: 520px) {
+  .stats-chart-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .stats-filter-chip {
+    font-size: .76rem;
+    padding: 7px 10px;
+  }
+
+  .stat-pie-layout {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .stat-pie {
+    width: min(62vw, 190px) !important;
+  }
+
+  .stat-pie-legend {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stat-pie-legend {
+    grid-template-columns: 1fr;
+  }
+}
