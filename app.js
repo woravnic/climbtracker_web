@@ -228,19 +228,186 @@ function installPersistentChartTooltipDismissal(container, hideTooltip) {
   document.addEventListener('pointerdown', handler, true);
 }
 
-function bodyScatterPlot(field,unit){
-  const days=bodyChartRange,end=dayStart(),start=end-(days-1)*86400000;
-  const points=state.logs.filter(l=>{const d=dayStart(new Date(l.date)),v=l[field];return d>=start&&d<=end&&v!=null&&Number.isFinite(Number(v))}).map(l=>({date:dayStart(new Date(l.date)),value:Number(l[field])})).sort((a,b)=>a.date-b.date);
-  if(!points.length)return `<div class="chart-empty">No ${field==='calories'?'calorie':'weight'} data in this period.</div>`;
-  const W=360,H=210,pad={l:48,r:14,t:14,b:34},plotW=W-pad.l-pad.r,plotH=H-pad.t-pad.b; let min=Math.min(...points.map(p=>p.value)),max=Math.max(...points.map(p=>p.value));
-  if(min===max){const bump=field==='weight'?2:Math.max(100,min*.08);min-=bump;max+=bump}else{const margin=(max-min)*.12;min-=margin;max+=margin} if(field==='calories')min=Math.max(0,min);
-  const x=d=>pad.l+((d-start)/Math.max(1,end-start))*plotW,y=v=>pad.t+(1-(v-min)/Math.max(1,max-min))*plotH;
-  const grid=[];for(let i=0;i<4;i++){const yy=pad.t+i*(plotH/3),val=max-i*((max-min)/3);grid.push(`<line x1="${pad.l}" y1="${yy.toFixed(1)}" x2="${W-pad.r}" y2="${yy.toFixed(1)}" class="chart-grid"/><text x="${pad.l-7}" y="${(yy+4).toFixed(1)}" text-anchor="end" class="chart-axis-label">${field==='weight'?val.toFixed(1):Math.round(val)}</text>`)}
-  const labelCount=days===7?4:5,xLabels=[];for(let i=0;i<labelCount;i++){const d=start+i*((end-start)/(labelCount-1)),xx=x(d),dt=new Date(d);xLabels.push(`<text x="${xx.toFixed(1)}" y="${H-10}" text-anchor="middle" class="chart-axis-label">${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</text>`)}
-  const line=points.length>1?`<polyline points="${points.map(p=>`${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')}" class="chart-series-line"/>`:'';
-  const dots=points.map((p,i)=>{const cx=x(p.date).toFixed(1),cy=y(p.value).toFixed(1);return `<g class="chart-point-group" data-date="${p.date}" data-value="${p.value}" data-field="${field}" data-unit="${unit}"><circle cx="${cx}" cy="${cy}" r="19" class="chart-point-hit"/><circle cx="${cx}" cy="${cy}" r="6" class="chart-point"/></g>`}).join('');
-  return `<div class="interactive-chart"><svg class="scatter-chart" viewBox="0 0 ${W} ${H}" role="img">${grid.join('')}<line x1="${pad.l}" y1="${pad.t+plotH}" x2="${W-pad.r}" y2="${pad.t+plotH}" class="chart-axis"/>${xLabels.join('')}${line}${dots}</svg><div class="chart-tooltip" hidden></div></div>`;
+
+function bodyScatterPlot(container, points, options = {}) {
+  const width = 640;
+  const height = 260;
+  const pad = { left: 50, right: 18, top: 24, bottom: 38 };
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+
+  container.innerHTML = '';
+  container.classList.add('chart-wrap');
+
+  if (!points || !points.length) {
+    container.innerHTML = '<div class="chart-empty">No data in this period</div>';
+    return;
+  }
+
+  const sorted = [...points]
+    .map(p => ({ ...p, value: Number(p.value) }))
+    .filter(p => Number.isFinite(p.value))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (!sorted.length) {
+    container.innerHTML = '<div class="chart-empty">No data in this period</div>';
+    return;
+  }
+
+  const values = sorted.map(p => p.value);
+  let minV = Math.min(...values);
+  let maxV = Math.max(...values);
+  if (minV === maxV) {
+    minV -= 1;
+    maxV += 1;
+  }
+  const padV = (maxV - minV) * 0.12;
+  minV -= padV;
+  maxV += padV;
+
+  const t0 = new Date(sorted[0].date + 'T00:00:00').getTime();
+  const t1 = new Date(sorted[sorted.length - 1].date + 'T00:00:00').getTime();
+  const span = Math.max(1, t1 - t0);
+
+  const x = d => pad.left + ((new Date(d + 'T00:00:00').getTime() - t0) / span) * innerW;
+  const y = v => pad.top + (1 - ((v - minV) / (maxV - minV))) * innerH;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('class', 'body-chart');
+  svg.setAttribute('role', 'img');
+
+  // grid + labels
+  for (let i = 0; i < 4; i++) {
+    const frac = i / 3;
+    const gy = pad.top + frac * innerH;
+    const gv = maxV - frac * (maxV - minV);
+
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', pad.left);
+    line.setAttribute('x2', width - pad.right);
+    line.setAttribute('y1', gy);
+    line.setAttribute('y2', gy);
+    line.setAttribute('class', 'chart-grid');
+    svg.appendChild(line);
+
+    const label = document.createElementNS(ns, 'text');
+    label.setAttribute('x', pad.left - 8);
+    label.setAttribute('y', gy + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'chart-axis-label');
+    label.textContent = options.formatY ? options.formatY(gv) : Math.round(gv);
+    svg.appendChild(label);
+  }
+
+  // line through data points
+  if (sorted.length > 1) {
+    const polyline = document.createElementNS(ns, 'polyline');
+    polyline.setAttribute(
+      'points',
+      sorted.map(p => `${x(p.date)},${y(p.value)}`).join(' ')
+    );
+    polyline.setAttribute('class', 'chart-series-line');
+    svg.appendChild(polyline);
+  }
+
+  const labelIdxs = [...new Set([0, Math.floor((sorted.length - 1) / 2), sorted.length - 1])];
+  labelIdxs.forEach(idx => {
+    const p = sorted[idx];
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', x(p.date));
+    text.setAttribute('y', height - 12);
+    text.setAttribute(
+      'text-anchor',
+      idx === 0 ? 'start' : (idx === sorted.length - 1 ? 'end' : 'middle')
+    );
+    text.setAttribute('class', 'chart-axis-label');
+    const d = new Date(p.date + 'T00:00:00');
+    text.textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    svg.appendChild(text);
+  });
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'chart-tooltip';
+  tooltip.hidden = true;
+
+  container.appendChild(svg);
+  container.appendChild(tooltip);
+
+  let activeDot = null;
+
+  const hideTooltip = () => {
+    tooltip.hidden = true;
+    if (activeDot) activeDot.classList.remove('active');
+    activeDot = null;
+  };
+
+  const showTooltip = (p, dot, cx, cy) => {
+    if (activeDot && activeDot !== dot) activeDot.classList.remove('active');
+    activeDot = dot;
+    dot.classList.add('active');
+
+    const dateText = new Date(p.date + 'T00:00:00')
+      .toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const valueText = options.formatValue ? options.formatValue(p.value) : p.value;
+
+    tooltip.innerHTML = `<strong>${dateText}</strong><span>${valueText}</span>`;
+    tooltip.hidden = false;
+
+    const svgRect = svg.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const sx = svgRect.width / width;
+    const sy = svgRect.height / height;
+
+    const px = (svgRect.left - containerRect.left) + cx * sx;
+    const py = (svgRect.top - containerRect.top) + cy * sy;
+
+    requestAnimationFrame(() => {
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
+      const left = Math.max(6, Math.min(container.clientWidth - tw - 6, px - tw / 2));
+      const top = Math.max(4, py - th - 10);
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    });
+  };
+
+  sorted.forEach(p => {
+    const cx = x(p.date);
+    const cy = y(p.value);
+
+    const hit = document.createElementNS(ns, 'circle');
+    hit.setAttribute('cx', cx);
+    hit.setAttribute('cy', cy);
+    hit.setAttribute('r', 18);
+    hit.setAttribute('class', 'chart-point-hit');
+
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    dot.setAttribute('r', 5.5);
+    dot.setAttribute('class', 'chart-point');
+
+    // Use pointerdown so iOS doesn't lose the tap during dense 1-month charts.
+    hit.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showTooltip(p, dot, cx, cy);
+    });
+
+    svg.appendChild(hit);
+    svg.appendChild(dot);
+  });
+
+  // Dismiss only when tapping blank chart area. No document/global listener.
+  svg.addEventListener('pointerdown', (e) => {
+    if (!e.target.classList.contains('chart-point-hit')) {
+      hideTooltip();
+    }
+  });
 }
+
 function hideBodyChartTooltips(){
   document.querySelectorAll('.interactive-chart .chart-tooltip').forEach(t=>t.hidden=true);
   document.querySelectorAll('.interactive-chart .chart-point.active').forEach(x=>x.classList.remove('active'));
