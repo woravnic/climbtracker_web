@@ -106,3 +106,74 @@ dialog:has(#climbForm) .modal-body{
 .chart-point{fill:var(--accent);stroke:#181b20;stroke-width:2.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 3px rgba(255,138,61,.32))}
 .chart-empty{display:grid;place-items:center;min-height:150px;color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:12px}
 @media(max-width:420px){.chart-toolbar{align-items:flex-start;flex-direction:column}.chart-range{width:100%}.scatter-chart{margin-left:-4px;width:calc(100% + 4px)}}
+
+
+/* Body chart connected series + tappable point tooltips */
+.chart-wrap {
+  position: relative;
+}
+
+.body-chart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  touch-action: manipulation;
+}
+
+.chart-series-line {
+  fill: none;
+  stroke: var(--accent, #f59e0b);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.chart-point {
+  fill: var(--accent, #f59e0b);
+  stroke: var(--surface, #181818);
+  stroke-width: 2.5;
+  pointer-events: none;
+  transition: r 120ms ease, stroke-width 120ms ease;
+}
+
+.chart-point.active {
+  r: 7.5;
+  stroke-width: 3.5;
+}
+
+.chart-point-hit {
+  fill: transparent;
+  stroke: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 20;
+  min-width: 92px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid rgba(245, 158, 11, 0.65);
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+  transform-origin: bottom center;
+}
+
+.chart-tooltip strong,
+.chart-tooltip span {
+  display: block;
+}
+
+.chart-tooltip span {
+  margin-top: 2px;
+  color: var(--accent, #f59e0b);
+  font-weight: 700;
+}
