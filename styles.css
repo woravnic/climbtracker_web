@@ -546,6 +546,9 @@ body::-webkit-scrollbar {
 }
 
 /* Projects: closed-by-default gym groups with tappable project cards. */
+.project-gym-card:not([open]) .project-gym-climbs {
+  display: none;
+}
 .project-gym-climbs {
   display: grid;
   gap: 10px;
