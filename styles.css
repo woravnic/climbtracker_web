@@ -90,3 +90,19 @@ dialog:has(#climbForm) .modal-body{
   padding-right: 10px;
   box-sizing: border-box;
 }
+
+
+/* Body history scatterplots */
+.body-chart-panel{display:grid;gap:18px}
+.chart-toolbar{align-items:center;gap:12px}
+.chart-range{width:min(220px,58%)}
+.chart-range button{padding:7px 9px;font-size:13px;touch-action:manipulation}
+.body-chart-block{display:grid;gap:8px}
+.body-chart-block+.body-chart-block{padding-top:16px;border-top:1px solid var(--line)}
+.scatter-chart{display:block;width:100%;height:auto;min-height:190px;overflow:visible}
+.chart-grid{stroke:#2b3038;stroke-width:1;vector-effect:non-scaling-stroke}
+.chart-axis{stroke:#4b525e;stroke-width:1;vector-effect:non-scaling-stroke}
+.chart-axis-label{fill:var(--muted);font-size:10px;font-family:inherit}
+.chart-point{fill:var(--accent);stroke:#181b20;stroke-width:2.5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 3px rgba(255,138,61,.32))}
+.chart-empty{display:grid;place-items:center;min-height:150px;color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:12px}
+@media(max-width:420px){.chart-toolbar{align-items:flex-start;flex-direction:column}.chart-range{width:100%}.scatter-chart{margin-left:-4px;width:calc(100% + 4px)}}
