@@ -216,8 +216,9 @@ function dateInputToDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})
 function selectedCalorieLog(){return state.logs.find(l=>dayStart(new Date(l.date))===calorieEntryDate)}
 function setBodyChartRange(days){bodyChartRange=days;renderBody()}
 
-function
-if (container._tooltipDismissHandler) {
+function installPersistentChartTooltipDismissal(container, hideTooltip) {
+  if (!container) return;
+  if (container._tooltipDismissHandler) {
     document.removeEventListener('pointerdown', container._tooltipDismissHandler, true);
   }
   const handler = (e) => {
@@ -225,22 +226,6 @@ if (container._tooltipDismissHandler) {
   };
   container._tooltipDismissHandler = handler;
   document.addEventListener('pointerdown', handler, true);
-}
-
-
-function clearBodyChartTooltip() {
-  document.querySelectorAll('.chart-tooltip').forEach(t => {
-    t.hidden = true;
-    t.classList.remove('visible');
-  });
-  document.querySelectorAll('.chart-point.active').forEach(p => p.classList.remove('active'));
-}
-
-function isChartInteractionTarget(target) {
-  return !!target.closest(
-    '.body-chart, .chart-wrap, .chart-tooltip, .chart-point-hit, ' +
-    '.stats-chart-card, .stat-pie, .stat-bar-vertical-chart, .stats-filter-chip, .chip'
-  );
 }
 
 function bodyScatterPlot(field,unit){
@@ -324,148 +309,3 @@ document.addEventListener('pointerdown',e=>{
   if(e.target.closest('.interactive-chart'))return;
   hideBodyChartTooltips();
 });
-
-
-if (!window.__climbtrackerChartDismissBound) {
-  window.__climbtrackerChartDismissBound = true;
-  document.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.chart-wrap')) clearBodyChartTooltip();
-  }, true);
-}
-
-
-/* v28 authoritative main-tab swipe handler */
-(function installStableMainTabSwipe() {
-  if (window.__stableMainTabSwipeInstalled) return;
-  window.__stableMainTabSwipeInstalled = true;
-
-  const TAB_ORDER = ['log', 'projects', 'stats', 'body'];
-  let startX = 0, startY = 0, lastX = 0;
-  let tracking = false, horizontal = false;
-  let contentEl = null;
-  let startWidth = 0;
-
-  function currentTabName() {
-    if (typeof state !== 'undefined') {
-      return state.activeTab || state.currentTab || state.tab || null;
-    }
-    const active = document.querySelector('.bottom-nav .active, nav .active');
-    return active?.dataset?.tab || active?.getAttribute('data-page') || null;
-  }
-
-  function setTabName(name) {
-    if (!name) return;
-    if (typeof switchTab === 'function') { switchTab(name); return; }
-    if (typeof setActiveTab === 'function') { setActiveTab(name); return; }
-    const btn = document.querySelector(`[data-tab="${name}"], [data-page="${name}"]`);
-    if (btn) btn.click();
-  }
-
-  function findSwipeContent() {
-    return document.querySelector('.tab-content, .page-content, main, #app');
-  }
-
-  function resetTransform(animate = true) {
-    if (!contentEl) return;
-    contentEl.style.transition = animate ? 'transform 180ms ease-out' : 'none';
-    contentEl.style.transform = 'translate3d(0,0,0)';
-    contentEl.style.width = '';
-    contentEl.style.maxWidth = '';
-    requestAnimationFrame(() => {
-      if (contentEl) contentEl.style.transition = '';
-    });
-  }
-
-  document.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    const target = e.target;
-    if (
-      target.closest('input, textarea, select, button, a, .modal, .sheet, .grade-wheel, .swipe-delete-row') ||
-      isChartInteractionTarget(target)
-    ) return;
-
-    const t = e.touches[0];
-    startX = lastX = t.clientX;
-    startY = t.clientY;
-    tracking = true;
-    horizontal = false;
-    contentEl = findSwipeContent();
-    if (contentEl) {
-      startWidth = contentEl.getBoundingClientRect().width;
-      contentEl.style.width = `${startWidth}px`;
-      contentEl.style.maxWidth = `${startWidth}px`;
-      contentEl.style.transition = 'none';
-    }
-  }, {passive: true, capture: true});
-
-  document.addEventListener('touchmove', (e) => {
-    if (!tracking || e.touches.length !== 1 || !contentEl) return;
-    const t = e.touches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
-    lastX = t.clientX;
-
-    if (!horizontal) {
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-      if (Math.abs(dy) >= Math.abs(dx) * 0.85) {
-        tracking = false;
-        resetTransform(false);
-        return;
-      }
-      horizontal = true;
-    }
-
-    if (horizontal) {
-      e.preventDefault();
-      const current = currentTabName();
-      const idx = TAB_ORDER.indexOf(current);
-      let limitedDx = dx;
-      if ((idx <= 0 && dx > 0) || (idx >= TAB_ORDER.length - 1 && dx < 0)) {
-        limitedDx = dx * 0.22;
-      }
-      contentEl.style.transform = `translate3d(${limitedDx}px,0,0)`;
-    }
-  }, {passive: false, capture: true});
-
-  document.addEventListener('touchend', () => {
-    if (!tracking && !horizontal) return;
-    const dx = lastX - startX;
-    const current = currentTabName();
-    const idx = TAB_ORDER.indexOf(current);
-    const threshold = Math.min(80, Math.max(48, startWidth * 0.16));
-
-    if (horizontal && Math.abs(dx) >= threshold && idx !== -1) {
-      const nextIdx = dx < 0 ? idx + 1 : idx - 1;
-      if (nextIdx >= 0 && nextIdx < TAB_ORDER.length) {
-        if (contentEl) {
-          contentEl.style.transition = 'transform 150ms ease-out';
-          contentEl.style.transform = `translate3d(${dx < 0 ? -startWidth : startWidth}px,0,0)`;
-        }
-        setTimeout(() => {
-          setTabName(TAB_ORDER[nextIdx]);
-          if (contentEl) {
-            contentEl.style.transition = 'none';
-            contentEl.style.transform = 'translate3d(0,0,0)';
-            contentEl.style.width = '';
-            contentEl.style.maxWidth = '';
-          }
-        }, 120);
-      } else {
-        resetTransform(true);
-      }
-    } else {
-      resetTransform(true);
-    }
-
-    tracking = false;
-    horizontal = false;
-    contentEl = null;
-  }, {passive: true, capture: true});
-
-  document.addEventListener('touchcancel', () => {
-    resetTransform(true);
-    tracking = false;
-    horizontal = false;
-    contentEl = null;
-  }, {passive: true, capture: true});
-})();
