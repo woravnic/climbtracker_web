@@ -651,12 +651,14 @@ body::-webkit-scrollbar {
   -webkit-tap-highlight-color: transparent;
 }
 .project-card-actions {
-  display: flex;
-  width: 100%;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 14px;
+  position: absolute;
+  z-index: 3;
+  top: 56px;
+  right: 12px;
+  width: auto;
+  margin: 0;
 }
 .project-attempt-btn {
-  margin-left: auto;
+  margin: 0;
+  white-space: nowrap;
 }
