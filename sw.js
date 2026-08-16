@@ -1,4 +1,4 @@
-const CACHE = 'climbtracker-v3';
+const CACHE = 'climbtracker-v4';
 const FILES = [
   './',
   './index.html',
