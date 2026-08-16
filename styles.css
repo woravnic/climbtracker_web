@@ -65,4 +65,9 @@ dialog:has(#climbForm) .modal-body{
   box-shadow:0 -10px 24px rgba(0,0,0,.24);
 }
 .body-log-row{width:100%;border:0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer;touch-action:manipulation}
-.body-log-row.selected{background:var(--surface-2,#eef5ff);outline:2px solid var(--accent,#3b82f6);outline-offset:-2px}
+.body-log-row.selected{outline-offset:-2px
+  background: transparent;
+  outline: 2px solid var(--accent, #f59e0b);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+}
