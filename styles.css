@@ -71,3 +71,22 @@ dialog:has(#climbForm) .modal-body{
   outline-offset: -2px;
   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
 }
+
+
+/* Selected Body history day: rounded, inset, dark-mode-friendly highlight */
+.history-row.selected,
+.recent-log-row.selected,
+.log-row.selected,
+.body-log-row.selected,
+.selected-day {
+  background: transparent !important;
+  outline: none !important;
+  border: 2px solid var(--accent, #f59e0b) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.08);
+  margin-left: 6px;
+  margin-right: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
+  box-sizing: border-box;
+}
