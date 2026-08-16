@@ -482,3 +482,30 @@ dialog:has(#climbForm) .modal-body{
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v27 stats/mobile interaction fixes */
+.stats-page{width:100%;max-width:100%;min-width:0;overflow-x:hidden;box-sizing:border-box}
+.stats-filter-panel{width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+.stats-filter-header{gap:10px}
+.stats-filter-chips{display:flex;flex-wrap:wrap!important;overflow:visible!important;gap:7px;width:100%;min-width:0;padding:0!important}
+.stats-filter-chip{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-height:34px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface2);color:var(--text);font:inherit;font-size:.78rem;line-height:1.05;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.stats-filter-chip.on{border-color:var(--accent);background:rgba(255,138,61,.16);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,138,61,.12)}
+.stats-chart-card{width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box}
+.vertical-grade-chart{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.vertical-grade-bars{width:max-content;max-width:none}
+.stat-pie-layout{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.stat-pie-legend{width:100%;max-width:100%;min-width:0}
+.stat-pie-legend-row{min-width:0}
+.stat-pie-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.chart-point-group,.chart-point-hit{touch-action:none;-webkit-tap-highlight-color:transparent}
+@media(max-width:520px){
+  .stats-page .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats-page .metric{min-width:0;padding:12px 10px}
+  .stats-page .metric strong{font-size:1.05rem;overflow-wrap:anywhere}
+  .stats-filter-panel,.stats-chart-card{padding:12px}
+  .stats-filter-chip{font-size:.75rem;padding:7px 9px}
+  .stat-pie-layout{grid-template-columns:1fr!important}
+  .stat-pie-legend{grid-template-columns:1fr 1fr!important;gap:7px 10px}
+}
+@media(max-width:350px){.stat-pie-legend{grid-template-columns:1fr!important}}

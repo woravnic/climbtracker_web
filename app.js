@@ -161,10 +161,20 @@ function filteredStats(){return state.climbs.filter(c=>{
 function __original_renderStats(){const all=state.climbs.filter(c=>!c.isProject&&c.type===statsType),grades=[...new Set(all.map(c=>c.grade))].sort((a,b)=>gradeScore(a)-gradeScore(b)),cs=filteredStats(),sessions=new Set(cs.map(c=>dayStart(new Date(c.date)))),hard=getHardest(cs),flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{}),max=Math.max(1,...Object.values(counts));app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>${grades.length?`<div class="chips"><button class="chip ${statsGrade===null?'on':''}" onclick="statsGrade=null;renderStats()"></button>${grades.map(g=>`<button class="chip ${statsGrade===g?'on':''}" onclick="statsGrade='${g}';renderStats()">${statsType==='Boulder'?'V':'5.'}${g}</button>`).join('')}</div>`:''}<div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div><div class="card"><h3>Grade Distribution</h3><div class="bar-wrap" style="margin-top:14px">${Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>`<div class="bar-row"><span>${statsType==='Boulder'?'V':'5.'}${g}</span><div class="bar"><i style="width:${counts[g]/max*100}%"></i></div><b>${counts[g]}</b></div>`).join('')||'<div class="empty">No data</div>'}</div></div></div>`}
 
 
-function statsFilterChip(label,value,current,setter){
-  const on=(value===null?current===null:current===value);
-  const safe=value===null?'null':JSON.stringify(value);
-  return `<button class="chip ${on?'on':''}" onclick="${setter}=${safe};renderStats()">${esc(label)}</button>`;
+function toggleStatsFilter(key,value){
+  const map={grade:'statsGrade',gym:'statsGym',incline:'statsIncline',hold:'statsHold',move:'statsMove'};
+  const current={grade:statsGrade,gym:statsGym,incline:statsIncline,hold:statsHold,move:statsMove}[key];
+  const next=current===value?null:value;
+  if(key==='grade')statsGrade=next;
+  else if(key==='gym')statsGym=next;
+  else if(key==='incline')statsIncline=next;
+  else if(key==='hold')statsHold=next;
+  else if(key==='move')statsMove=next;
+  renderStats();
+}
+function statsFilterChip(label,value,current,key){
+  const on=current===value;
+  return `<button type="button" class="chip stats-filter-chip ${on?'on':''}" data-filter-key="${esc(key)}" onclick='toggleStatsFilter(${JSON.stringify(key)},${JSON.stringify(value)})'>${esc(label)}</button>`;
 }
 function statsValues(climbs,field,multi=false){
   const s=new Set();climbs.forEach(c=>{if(multi){String(c[field]||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>s.add(x))}else{const v=String(c[field]||'').trim();if(v)s.add(v)}});return [...s].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
@@ -174,62 +184,6 @@ function makeVerticalGradeChart(items){
   const max=Math.max(1,...items.map(x=>x.value));
   return `<div class="vertical-grade-chart" role="img" aria-label="Grade distribution"><div class="vertical-grade-bars">${items.map(item=>`<div class="vertical-grade-col"><div class="vertical-grade-value">${item.value}</div><div class="vertical-grade-track"><div class="vertical-grade-fill" style="height:${Math.max(5,item.value/max*100)}%"></div></div><div class="vertical-grade-label">${esc(item.label)}</div></div>`).join('')}</div></div>`;
 }
-
-function bindStatsFilterChips(root) {
-  if (!root || root._statsFiltersBound) return;
-  root._statsFiltersBound = true;
-
-  root.addEventListener('click', (e) => {
-    const chip = e.target.closest('.stats-filter-chip');
-    if (!chip) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const key = chip.dataset.filterKey;
-    const value = chip.dataset.filterValue;
-    if (!key || !value) return;
-
-    if (!window.statsFilters) window.statsFilters = {};
-    const current = new Set(window.statsFilters[key] || []);
-    if (current.has(value)) current.delete(value);
-    else current.add(value);
-    window.statsFilters[key] = [...current];
-
-    chip.classList.toggle('selected', current.has(value));
-
-    if (typeof renderStats === 'function') renderStats();
-    else if (typeof renderStatsPage === 'function') renderStatsPage();
-  });
-}
-
-
-function applyStatsTagFilters(climbs) {
-  const f = window.statsFilters || {};
-  const arr = Array.isArray(climbs) ? climbs : [];
-  return arr.filter(c => {
-    const matchSingle = (key, raw) => {
-      const selected = f[key] || [];
-      if (!selected.length) return true;
-      return selected.includes(String(raw || '').trim());
-    };
-    const matchMulti = (key, raw) => {
-      const selected = f[key] || [];
-      if (!selected.length) return true;
-      let vals = raw;
-      if (!Array.isArray(vals)) vals = String(vals || '').split(/[|,;]/).map(s=>s.trim()).filter(Boolean);
-      return selected.every(v => vals.includes(v));
-    };
-
-    if (!matchSingle('grade', c.grade)) return false;
-    if (!matchSingle('gym', c.gym)) return false;
-    if (!matchSingle('incline', c.incline)) return false;
-    if (!matchSingle('type', c.type || c.climbType)) return false;
-    if (!matchMulti('holdTypes', c.holdTypes)) return false;
-    if (!matchMulti('keyMoves', c.keyMoves)) return false;
-    return true;
-  });
-}
-
 function renderStats(){
   const base=state.climbs.filter(c=>!c.isProject&&c.type===statsType);
   const grades=[...new Set(base.map(c=>c.grade).filter(Boolean))].sort((a,b)=>gradeScore(a)-gradeScore(b));
@@ -239,22 +193,20 @@ function renderStats(){
   const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{});
   const gradeItems=Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>({label:(statsType==='Boulder'?'V':'5.')+g,value:counts[g]}));
   const inclineItems=countSingleField(cs,'incline'),holdItems=countMultiField(cs,'holdTypes'),moveItems=countMultiField(cs,'keyMoves');
-  const filterGroup=(title,values,current,setter,format=x=>x)=>values.length?`<div class="stats-filter-group"><div class="stats-filter-label">${esc(title)}</div><div class="chips stats-filter-chips">${statsFilterChip('All',null,current,setter)}${values.map(v=>statsFilterChip(format(v),v,current,setter)).join('')}</div></div>`:'';
-  app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>
-  <div class="card stats-filter-panel"><div class="row between"><h3>Filters</h3><button class="btn secondary stats-clear-btn" onclick="statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()">Clear</button></div>
-    ${filterGroup('Grade',grades,statsGrade,'statsGrade',g=>(statsType==='Boulder'?'V':'5.')+g)}
-    ${filterGroup('Gym',gyms,statsGym,'statsGym')}
-    ${filterGroup('Incline',incs,statsIncline,'statsIncline')}
-    ${filterGroup('Hold Type',holds,statsHold,'statsHold')}
-    ${filterGroup('Key Move',moves,statsMove,'statsMove')}
+  const filterGroup=(title,values,current,key,format=x=>x)=>values.length?`<div class="stats-filter-group"><div class="stats-filter-label">${esc(title)}</div><div class="stats-filter-chips">${values.map(v=>statsFilterChip(format(v),v,current,key)).join('')}</div></div>`:'';
+  app.innerHTML=`<div class="stack stats-page"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>
+  <div class="card stats-filter-panel"><div class="row between stats-filter-header"><h3>Filters</h3><button class="btn secondary stats-clear-btn" onclick="statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()">Clear</button></div>
+    ${filterGroup('Grade',grades,statsGrade,'grade',g=>(statsType==='Boulder'?'V':'5.')+g)}
+    ${filterGroup('Gym',gyms,statsGym,'gym')}
+    ${filterGroup('Incline',incs,statsIncline,'incline')}
+    ${filterGroup('Hold Type',holds,statsHold,'hold')}
+    ${filterGroup('Key Move',moves,statsMove,'move')}
   </div>
   <div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div>
   <div class="stats-chart-card"><div class="stats-chart-title">Grade Distribution</div>${makeVerticalGradeChart(gradeItems)}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Inclines</div>${makeStatPieChart(inclineItems,{ariaLabel:'Incline distribution',centerLabel:'Climbs'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Hold Types</div>${makeStatPieChart(holdItems,{ariaLabel:'Hold type distribution',centerLabel:'Uses'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Key Moves</div>${makeStatPieChart(moveItems,{ariaLabel:'Key move distribution',centerLabel:'Uses'})}</div></div>`;
-
-  bindStatsFilterChips(document.querySelector('#app'));
 }
 
 function todayLog(){return state.logs.find(l=>l.date===dayStart())}
@@ -286,12 +238,45 @@ function bodyScatterPlot(field,unit){
   const grid=[];for(let i=0;i<4;i++){const yy=pad.t+i*(plotH/3),val=max-i*((max-min)/3);grid.push(`<line x1="${pad.l}" y1="${yy.toFixed(1)}" x2="${W-pad.r}" y2="${yy.toFixed(1)}" class="chart-grid"/><text x="${pad.l-7}" y="${(yy+4).toFixed(1)}" text-anchor="end" class="chart-axis-label">${field==='weight'?val.toFixed(1):Math.round(val)}</text>`)}
   const labelCount=days===7?4:5,xLabels=[];for(let i=0;i<labelCount;i++){const d=start+i*((end-start)/(labelCount-1)),xx=x(d),dt=new Date(d);xLabels.push(`<text x="${xx.toFixed(1)}" y="${H-10}" text-anchor="middle" class="chart-axis-label">${dt.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})}</text>`)}
   const line=points.length>1?`<polyline points="${points.map(p=>`${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')}" class="chart-series-line"/>`:'';
-  const dots=points.map((p,i)=>{const cx=x(p.date).toFixed(1),cy=y(p.value).toFixed(1);return `<g class="chart-point-group" data-date="${p.date}" data-value="${p.value}" data-field="${field}" data-unit="${unit}"><circle cx="${cx}" cy="${cy}" r="15" class="chart-point-hit"/><circle cx="${cx}" cy="${cy}" r="6" class="chart-point"/></g>`}).join('');
+  const dots=points.map((p,i)=>{const cx=x(p.date).toFixed(1),cy=y(p.value).toFixed(1);return `<g class="chart-point-group" data-date="${p.date}" data-value="${p.value}" data-field="${field}" data-unit="${unit}"><circle cx="${cx}" cy="${cy}" r="19" class="chart-point-hit"/><circle cx="${cx}" cy="${cy}" r="6" class="chart-point"/></g>`}).join('');
   return `<div class="interactive-chart"><svg class="scatter-chart" viewBox="0 0 ${W} ${H}" role="img">${grid.join('')}<line x1="${pad.l}" y1="${pad.t+plotH}" x2="${W-pad.r}" y2="${pad.t+plotH}" class="chart-axis"/>${xLabels.join('')}${line}${dots}</svg><div class="chart-tooltip" hidden></div></div>`;
 }
-function showBodyChartPoint(group){const wrap=group.closest('.interactive-chart'),tip=wrap?.querySelector('.chart-tooltip');if(!wrap||!tip)return;document.querySelectorAll('.chart-point.active').forEach(x=>x.classList.remove('active'));group.querySelector('.chart-point')?.classList.add('active');const date=ymd(Number(group.dataset.date)),value=Number(group.dataset.value),field=group.dataset.field,unit=group.dataset.unit;tip.innerHTML=`<strong>${esc(date)}</strong><span>${field==='weight'?value.toFixed(1):Math.round(value)} ${esc(unit)}</span>`;tip.hidden=false;const point=group.querySelector('.chart-point'),pr=point.getBoundingClientRect(),wr=wrap.getBoundingClientRect();requestAnimationFrame(()=>{const tr=tip.getBoundingClientRect();let left=pr.left-wr.left+pr.width/2-tr.width/2;left=Math.max(6,Math.min(wrap.clientWidth-tr.width-6,left));tip.style.left=`${left}px`;tip.style.top=`${Math.max(4,pr.top-wr.top-tr.height-8)}px`})}
-function bindBodyChartPoints(){document.querySelectorAll('.chart-point-group').forEach(group=>{let down=null;group.addEventListener('pointerdown',e=>{e.stopPropagation();down={x:e.clientX,y:e.clientY,id:e.pointerId}},{passive:true});group.addEventListener('pointerup',e=>{e.stopPropagation();if(!down||down.id!==e.pointerId)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved<12)showBodyChartPoint(group)});group.addEventListener('pointercancel',()=>down=null)})}
-document.addEventListener('pointerdown',e=>{if(e.target.closest('.chart-point-tap'))return;document.querySelectorAll('.chart-tooltip').forEach(t=>t.hidden=true);document.querySelectorAll('.chart-point.active').forEach(x=>x.classList.remove('active'))});
+function hideBodyChartTooltips(){
+  document.querySelectorAll('.interactive-chart .chart-tooltip').forEach(t=>t.hidden=true);
+  document.querySelectorAll('.interactive-chart .chart-point.active').forEach(x=>x.classList.remove('active'));
+}
+function showBodyChartPoint(group){
+  const wrap=group.closest('.interactive-chart'),tip=wrap?.querySelector('.chart-tooltip');
+  if(!wrap||!tip)return;
+  hideBodyChartTooltips();
+  group.querySelector('.chart-point')?.classList.add('active');
+  const date=ymd(Number(group.dataset.date)),value=Number(group.dataset.value),field=group.dataset.field,unit=group.dataset.unit;
+  tip.innerHTML=`<strong>${esc(date)}</strong><span>${field==='weight'?value.toFixed(1):Math.round(value)} ${esc(unit)}</span>`;
+  tip.hidden=false;
+  const point=group.querySelector('.chart-point'),pr=point.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+  requestAnimationFrame(()=>{
+    const tr=tip.getBoundingClientRect();
+    let left=pr.left-wr.left+pr.width/2-tr.width/2;
+    left=Math.max(6,Math.min(wrap.clientWidth-tr.width-6,left));
+    tip.style.left=`${left}px`;
+    tip.style.top=`${Math.max(4,pr.top-wr.top-tr.height-8)}px`;
+  });
+}
+function bindBodyChartPoints(){
+  document.querySelectorAll('.chart-point-group').forEach(group=>{
+    group.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button!==0)return;
+      e.preventDefault();
+      e.stopPropagation();
+      showBodyChartPoint(group);
+    });
+    group.addEventListener('touchstart',e=>{
+      e.stopPropagation();
+      showBodyChartPoint(group);
+    },{passive:true});
+  });
+}
+
 function renderBody(){const t=todayLog(),selected=selectedCalorieLog(),hist=(selected?.calorieHistory||'').split(',').filter(Boolean),past=[...state.logs].filter(l=>l.date<dayStart()).sort((a,b)=>b.date-a.date),weights=past.map(l=>l.weight).filter(x=>x!=null).slice(0,7),cals=past.map(l=>l.calories).filter(x=>x!=null).slice(0,7),aw=weights.length?weights.reduce((a,b)=>a+b,0)/weights.length:null,ac=cals.length?cals.reduce((a,b)=>a+b,0)/cals.length:null,goal=state.calorieGoal||0,isToday=calorieEntryDate===dayStart(),selectedLabel=isToday?'Today':ymd(calorieEntryDate);app.innerHTML=`<div class="stack"><div class="card"><div class="row between"><h3 class="accent">Today's Total: ${t?.calories||0} Cals</h3>${goal?`<span class="muted">Goal ${goal}</span>`:''}</div>${goal?`<div class="progress" style="margin-top:10px"><i style="width:${Math.min(100,(t?.calories||0)/goal*100)}%"></i></div>`:''}<div class="muted" style="margin-top:14px">Adding calories to <strong>${esc(selectedLabel)}</strong></div><div class="row" style="margin-top:10px"><input id="calInput" type="number" min="0" inputmode="numeric" placeholder="Add Calories"><button class="btn" onclick="addCalories()">Add</button></div><div class="muted" style="margin-top:8px">${esc(selectedLabel)} total: ${selected?.calories||0} Cals</div>${hist.length?`<div style="margin-top:12px">${hist.map((x,i)=>`<div class="cal-history row between"><span>Entry ${i+1}: ${x} Calories</span><button class="btn secondary" onclick="deleteCal(${i})">Delete</button></div>`).join('')}</div>`:''}</div><div class="card">${t?.weight!=null?`<div class="row between"><div><small class="muted">Today's Weight</small><div class="big">${t.weight} lbs</div></div><button class="btn secondary" onclick="showWeightForm()">Edit</button></div>`:`<div class="row"><input id="weightInput" type="number" step="0.1" inputmode="decimal" placeholder="Today's Weight (lbs)"><button class="btn" onclick="saveWeight()">Save</button></div>`}</div><div class="metric-grid"><div class="metric"><small>7-Day Avg Weight</small><strong>${aw!=null?aw.toFixed(1)+' lbs':'—'}</strong></div><div class="metric"><small>7-Day Avg Cals</small><strong>${ac!=null?Math.round(ac):'—'}</strong></div></div><div class="card body-chart-panel"><div class="row between chart-toolbar"><h3>History</h3><div class="segmented chart-range"><button onclick="setBodyChartRange(7)" class="${bodyChartRange===7?'active':''}">7 Days</button><button onclick="setBodyChartRange(30)" class="${bodyChartRange===30?'active':''}">1 Month</button></div></div><div class="body-chart-block"><div class="row between"><strong>Calories</strong><span class="muted">cal/day</span></div>${bodyScatterPlot('calories','cal')}</div><div class="body-chart-block"><div class="row between"><strong>Weight</strong><span class="muted">lbs</span></div>${bodyScatterPlot('weight','lb')}</div></div><div class="card"><h3>Recent Logs</h3>${state.logs.length?[...state.logs].sort((a,b)=>b.date-a.date).slice(0,10).map(l=>{const d=dayStart(new Date(l.date)),active=d===calorieEntryDate;return `<button type="button" class="climb-row row between body-log-row${active?' selected':''}" onclick="selectCalorieLog(${d})"><span>${ymd(l.date)}</span><span class="muted">${l.calories??'—'} cal · ${l.weight??'—'} lb</span></button>`}).join(''):'<div class="empty">No logs yet.</div>'}</div></div>`}
 function selectCalorieLog(date){calorieEntryDate=dayStart(new Date(date));renderBody()}
 function addCalories(){const n=parseInt(document.querySelector('#calInput').value);if(!Number.isFinite(n))return;const d=calorieEntryDate,l=state.logs.find(x=>dayStart(new Date(x.date))===d),arr=(l?.calorieHistory||'').split(',').filter(Boolean);arr.push(String(n));upsertLog(d,{calories:(l?.calories||0)+n,calorieHistory:arr.join(',')});save()}
@@ -318,3 +303,9 @@ function applyParsedBackup(parsed,replace=false){if(replace){state.climbs=parsed
 csvInput.onchange=async()=>{const f=csvInput.files[0];if(!f)return;const parsed=parseBackupCsv(await f.text());applyParsedBackup(parsed,false);csvInput.value='';save();alert(`Imported ${parsed.climbs.length} climbs and ${parsed.logs.length} daily logs.`)};
 if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await reg.update()}catch(e){console.warn('Service worker update failed',e)}});
 render();
+
+// bodyChartOutsideDismissV27
+document.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.interactive-chart'))return;
+  hideBodyChartTooltips();
+});
