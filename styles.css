@@ -565,31 +565,26 @@ body::-webkit-scrollbar {
   transform: scale(.99);
 }
 
-/* Keep collapsed project gym groups compact like native disclosure rows. */
+/* Projects gym disclosure: two-line label with only the chevron at right. */
 .project-gym-card > .session-summary {
-  padding: 9px 12px;
+  padding: 10px 12px;
   min-height: 0;
 }
-.project-gym-card > .session-summary > div:first-child {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+.project-gym-summary-text {
+  display: grid;
+  gap: 2px;
   min-width: 0;
 }
-.project-gym-card > .session-summary > div:first-child > .muted {
+.project-gym-summary-text > strong {
+  line-height: 1.2;
+}
+.project-gym-summary-text > .muted {
   font-size: 12px;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 .project-gym-card > .session-summary .session-summary-right {
-  gap: 9px;
+  gap: 0;
   align-items: center;
-}
-.project-gym-card > .session-summary .session-summary-right small {
-  display: none;
-}
-.project-gym-card > .session-summary .session-summary-right .accent {
-  line-height: 1;
-  font-weight: 700;
 }
 
 /* Keep grid stacks from stretching closed cards to fill the viewport. */
