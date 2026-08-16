@@ -524,11 +524,40 @@ html,body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
 .vertical-grade-track{width:min(24px,70%);min-width:8px}
 .vertical-grade-label{font-size:clamp(.58rem,2.4vw,.76rem);overflow:hidden;text-overflow:clip}
 
-/* v33: prevent iOS Safari/PWA from auto-zooming focused form fields. */
-@supports (-webkit-touch-callout: none) {
+/* Hide scrollbars while keeping touch scrolling enabled */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent iOS Safari from zooming when form controls receive focus. */
+@media (max-width: 760px) {
   input,
   select,
   textarea {
     font-size: 16px;
   }
+}
+
+/* Projects: closed-by-default gym groups with tappable project cards. */
+.project-gym-climbs {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #282d35;
+}
+.project-gym-climbs .project-card {
+  background: var(--surface2);
+  padding: 14px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+}
+.project-gym-climbs .project-card:active {
+  transform: scale(.99);
 }
