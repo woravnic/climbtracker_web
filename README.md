@@ -1,27 +1,5 @@
 # Climb Tracker PWA
 
-A local-first Progressive Web App port of the Android Climbtracker project.
-
-## Run locally on Windows
-
-You need to serve the folder over HTTP (service workers do not work reliably from `file://`). From this folder, use either:
-
-```powershell
-py -m http.server 8000
-```
-
-or, if Node.js is installed:
-
-```powershell
-npx serve .
-```
-
-Then open `http://localhost:8000` (or the URL shown by `serve`).
-
-## Put it on an iPhone
-
-For iPhone installation, deploy this folder to any HTTPS static host such as GitHub Pages, Cloudflare Pages, Netlify, or Vercel. Open the HTTPS site in Safari, tap Share, then **Add to Home Screen**.
-
 ## Data
 
 - Data is stored locally in the browser using `localStorage`.
