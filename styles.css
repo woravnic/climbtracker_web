@@ -14,3 +14,6 @@
 
 .incline-chip{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .content{overscroll-behavior-x:none}
+
+/* Keep vertical page scrolling native while allowing app-level horizontal swipe gestures. */
+#app { touch-action: pan-y; }
