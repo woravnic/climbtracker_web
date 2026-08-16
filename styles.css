@@ -26,3 +26,14 @@
 .climb-form-actions{position:sticky;bottom:-16px;z-index:7;margin:4px -16px -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(21,24,29,.96);border-top:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 -10px 24px rgba(0,0,0,.24)}
 .climb-form-actions .btn{min-height:48px;flex:1}
 .climb-form-actions .btn.danger{flex:0 0 auto}
+
+
+/* Swipe-to-delete climb rows. */
+.swipe-delete-row{position:relative;overflow:hidden;border-top:1px solid #282d35;touch-action:pan-y;background:#c93636}
+.session-climbs .swipe-delete-row:first-child{border-top:0}
+.swipe-delete-row .climb-row{position:relative;z-index:2;border-top:0;background:var(--surface);padding:11px 0;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.swipe-delete-action{position:absolute;z-index:1;top:0;right:0;bottom:0;width:86px;border:0;background:#d83a3a;color:#fff;font:inherit;font-weight:750;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.swipe-delete-row.delete-open .swipe-delete-action{box-shadow:inset 1px 0 rgba(255,255,255,.08)}
+/* Keep an empty tab large enough to provide a dependable horizontal swipe surface. */
+#app{min-height:calc(100dvh - 64px - 86px)}
+#app>.stack{min-height:inherit}
