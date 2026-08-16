@@ -321,3 +321,27 @@ dialog:has(#climbForm) .modal-body{
 }
 
 .interactive-chart{position:relative}.chart-series-line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}.chart-point-tap{cursor:pointer;touch-action:manipulation}.chart-point.active{stroke:var(--accent);stroke-width:4;filter:drop-shadow(0 0 5px rgba(255,138,61,.7))}.interactive-chart .chart-tooltip{position:absolute;z-index:20;min-width:92px;padding:7px 10px;border-radius:10px;background:#17191e;border:1px solid rgba(255,138,61,.65);box-shadow:0 6px 18px rgba(0,0,0,.38);color:#fff;font-size:12px;line-height:1.25;text-align:center;pointer-events:none}.interactive-chart .chart-tooltip strong,.interactive-chart .chart-tooltip span{display:block}.interactive-chart .chart-tooltip span{margin-top:2px;color:var(--accent);font-weight:700}
+
+
+/* Vertical grade distribution */
+.vertical-grade-chart{overflow-x:auto;padding:4px 0 2px}
+.vertical-grade-bars{display:flex;align-items:flex-end;gap:10px;min-height:220px;min-width:max-content;padding:8px 4px 0}
+.vertical-grade-col{width:42px;display:grid;grid-template-rows:22px 150px 30px;align-items:end;text-align:center}
+.vertical-grade-value{font-size:.78rem;opacity:.8;align-self:center}
+.vertical-grade-track{height:150px;width:24px;margin:0 auto;background:rgba(255,255,255,.07);border-radius:8px 8px 4px 4px;display:flex;align-items:flex-end;overflow:hidden}
+.vertical-grade-fill{width:100%;background:var(--accent,#f59e0b);border-radius:7px 7px 3px 3px;min-height:5px}
+.vertical-grade-label{font-size:.76rem;padding-top:6px;white-space:nowrap}
+
+/* Stats filter panel */
+.stats-filter-panel{display:grid;gap:13px}
+.stats-filter-panel h3{margin:0}
+.stats-clear-btn{padding:7px 11px;font-size:.78rem}
+.stats-filter-group{display:grid;gap:7px}
+.stats-filter-label{font-size:.78rem;font-weight:700;opacity:.72;text-transform:uppercase;letter-spacing:.04em}
+.stats-filter-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.stats-filter-chips::-webkit-scrollbar{display:none}
+
+/* Reliable body-chart touch targets */
+.chart-point-hit{fill:transparent;stroke:none;pointer-events:all;touch-action:manipulation}
+.chart-point-group{cursor:pointer;touch-action:manipulation}
+.chart-point{pointer-events:none}
