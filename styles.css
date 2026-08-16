@@ -17,3 +17,12 @@
 
 /* Keep vertical page scrolling native while allowing app-level horizontal swipe gestures. */
 #app { touch-action: pan-y; }
+
+
+/* Native-feeling horizontal tab transitions. */
+#app{transform:translate3d(0,0,0);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+
+/* Keep climb-entry actions visible while the form scrolls. */
+.climb-form-actions{position:sticky;bottom:-16px;z-index:7;margin:4px -16px -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(21,24,29,.96);border-top:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 -10px 24px rgba(0,0,0,.24)}
+.climb-form-actions .btn{min-height:48px;flex:1}
+.climb-form-actions .btn.danger{flex:0 0 auto}
