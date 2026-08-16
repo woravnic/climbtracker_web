@@ -564,3 +564,30 @@ body::-webkit-scrollbar {
 .project-gym-climbs .project-card:active {
   transform: scale(.99);
 }
+
+/* Keep collapsed project gym groups compact like native disclosure rows. */
+.project-gym-card > .session-summary {
+  padding: 9px 12px;
+  min-height: 0;
+}
+.project-gym-card > .session-summary > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.project-gym-card > .session-summary > div:first-child > .muted {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.project-gym-card > .session-summary .session-summary-right {
+  gap: 9px;
+  align-items: center;
+}
+.project-gym-card > .session-summary .session-summary-right small {
+  display: none;
+}
+.project-gym-card > .session-summary .session-summary-right .accent {
+  line-height: 1;
+  font-weight: 700;
+}
