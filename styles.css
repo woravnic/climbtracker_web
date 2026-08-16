@@ -591,3 +591,8 @@ body::-webkit-scrollbar {
   line-height: 1;
   font-weight: 700;
 }
+
+/* Keep grid stacks from stretching closed cards to fill the viewport. */
+#app > .stack {
+  align-content: start;
+}
