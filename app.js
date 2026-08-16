@@ -35,6 +35,97 @@ document.addEventListener('pointerdown',e=>{if(tabAnimating||e.pointerType!=='to
 document.addEventListener('pointermove',e=>{if(!swipeStart||e.pointerId!==swipeStart.id)return;const s=swipeStart,dx=e.clientX-s.x,dy=e.clientY-s.y;if(!s.mode&&Math.max(Math.abs(dx),Math.abs(dy))>10)s.mode=Math.abs(dx)>Math.abs(dy)*1.15?'horizontal':'vertical';if(s.mode==='vertical'){clearSurfaceMotion(s.surface);swipeStart=null;return}if(s.mode!=='horizontal')return;e.preventDefault();const i=MAIN_TABS.indexOf(tab),blocked=(dx>0&&i===0)||(dx<0&&i===MAIN_TABS.length-1),drag=blocked?dx*.22:dx;s.surface.style.transition='none';s.surface.style.willChange='transform';s.surface.style.transform=`translate3d(${drag}px,0,0)`},{passive:false});
 document.addEventListener('pointerup',e=>{if(!swipeStart||e.pointerId!==swipeStart.id)return;const s=swipeStart;swipeStart=null;if(s.mode!=='horizontal'){clearSurfaceMotion(s.surface);return}const dx=e.clientX-s.x,dt=Math.max(1,performance.now()-s.time),velocity=Math.abs(dx)/dt,i=MAIN_TABS.indexOf(tab),direction=dx<0?-1:1,nextIndex=i+(direction<0?1:-1),canMove=nextIndex>=0&&nextIndex<MAIN_TABS.length,commit=canMove&&(Math.abs(dx)>window.innerWidth*.20||velocity>.55);if(commit)slideToTab(MAIN_TABS[nextIndex],direction,s.surface);else springSurfaceHome(s.surface)},{passive:true});
 document.addEventListener('pointercancel',e=>{if(!swipeStart||e.pointerId!==swipeStart.id)return;const s=swipeStart;swipeStart=null;springSurfaceHome(s.surface)},{passive:true});
+
+function makeStatBarChart(items, options = {}) {
+  if (!items || !items.length) return '<div class="chart-empty">No data yet</div>';
+
+  const max = Math.max(...items.map(x => x.value), 1);
+  return `
+    <div class="stat-bar-chart" role="img" aria-label="${escapeHtml(options.ariaLabel || 'Bar chart')}">
+      ${items.map(item => `
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">${escapeHtml(item.label)}</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" style="width:${Math.max(4, (item.value / max) * 100)}%"></div>
+          </div>
+          <div class="stat-bar-value">${item.value}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function pieColor(index) {
+  const colors = [
+    '#f59e0b', '#fb923c', '#facc15', '#84cc16',
+    '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6',
+    '#6366f1', '#8b5cf6', '#d946ef', '#ec4899',
+    '#f43f5e', '#a3a3a3'
+  ];
+  return colors[index % colors.length];
+}
+
+function makeStatPieChart(items, options = {}) {
+  if (!items || !items.length) return '<div class="chart-empty">No data yet</div>';
+
+  const total = items.reduce((s, x) => s + x.value, 0) || 1;
+  let acc = 0;
+  const stops = items.map((item, i) => {
+    const start = (acc / total) * 100;
+    acc += item.value;
+    const end = (acc / total) * 100;
+    return `${pieColor(i)} ${start}% ${end}%`;
+  }).join(', ');
+
+  return `
+    <div class="stat-pie-layout">
+      <div class="stat-pie" style="background:conic-gradient(${stops})" role="img" aria-label="${escapeHtml(options.ariaLabel || 'Pie chart')}">
+        <div class="stat-pie-hole">
+          <strong>${total}</strong>
+          <span>${escapeHtml(options.centerLabel || 'Total')}</span>
+        </div>
+      </div>
+      <div class="stat-pie-legend">
+        ${items.map((item, i) => `
+          <div class="stat-pie-legend-row">
+            <span class="stat-pie-dot" style="background:${pieColor(i)}"></span>
+            <span class="stat-pie-name">${escapeHtml(item.label)}</span>
+            <span class="stat-pie-count">${item.value}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function countSingleField(climbs, field) {
+  const map = new Map();
+  climbs.forEach(c => {
+    const v = (c[field] || '').trim();
+    if (!v) return;
+    map.set(v, (map.get(v) || 0) + 1);
+  });
+  return [...map.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a,b) => b.value - a.value || a.label.localeCompare(b.label));
+}
+
+function countMultiField(climbs, field) {
+  const map = new Map();
+  climbs.forEach(c => {
+    let vals = c[field];
+    if (!vals) return;
+    if (!Array.isArray(vals)) {
+      vals = String(vals).split(/[|,;]/).map(s => s.trim()).filter(Boolean);
+    }
+    vals.forEach(v => map.set(v, (map.get(v) || 0) + 1));
+  });
+  return [...map.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a,b) => b.value - a.value || a.label.localeCompare(b.label));
+}
+
+
 function render(){action.classList.add('hidden');action.onclick=null;if(tab==='log'){title.textContent='Climb Tracker';renderLog()}if(tab==='projects'){title.textContent='Active Projects';renderProjects()}if(tab==='stats'){title.textContent='Climbing Stats';action.classList.remove('hidden');action.onclick=showDataMenu;renderStats()}if(tab==='body'){title.textContent='Body';action.classList.remove('hidden');action.onclick=showBodySettings;renderBody()}}
 function sessionGroups(type=logType){const completed=state.climbs.filter(c=>!c.isProject&&c.type===type).sort((a,b)=>b.date-a.date),map=new Map();completed.forEach(c=>{const d=dayStart(new Date(c.date)),gym=(c.gym||'No Gym').trim()||'No Gym',k=`${d}|||${gym.toLowerCase()}`;if(!map.has(k))map.set(k,{date:d,gym,climbs:[]});map.get(k).climbs.push(c)});return [...map.values()].sort((a,b)=>b.date-a.date||a.gym.localeCompare(b.gym))}
 function logSummaryBanner(){const completed=state.climbs.filter(c=>!c.isProject&&c.type===logType),hard=getHardest(completed),today=dayStart(),todayClimbs=completed.filter(c=>dayStart(new Date(c.date))===today),todayHard=getHardest(todayClimbs);return `<div class="log-summary card"><div class="log-summary-title">${logType} Summary</div><div class="log-summary-grid"><div><small>Total Climbs</small><strong>${completed.length}</strong></div><div><small>Hardest Grade</small><strong class="accent">${hard?displayGrade(hard):'—'}</strong></div></div>${todayClimbs.length?`<div class="log-today"><div class="log-today-label">Today</div><div><strong>${todayClimbs.length}</strong><small> climb${todayClimbs.length===1?'':'s'}</small></div><div><small>Hardest </small><strong class="accent">${todayHard?displayGrade(todayHard):'—'}</strong></div></div>`:''}</div>`}
@@ -57,7 +148,92 @@ function projectCard(c){return `<div class="card project-card"><div class="row b
 function projectAttempt(id){const c=state.climbs.find(x=>x.id===id);c.attempts++;save()}
 function sendProject(id){const c=state.climbs.find(x=>x.id===id);c.attempts++;c.isProject=false;c.isFlash=false;c.date=Date.now();save()}
 function filteredStats(){return state.climbs.filter(c=>!c.isProject&&c.type===statsType&&(!statsGrade||c.grade===statsGrade))}
-function renderStats(){const all=state.climbs.filter(c=>!c.isProject&&c.type===statsType),grades=[...new Set(all.map(c=>c.grade))].sort((a,b)=>gradeScore(a)-gradeScore(b)),cs=filteredStats(),sessions=new Set(cs.map(c=>dayStart(new Date(c.date)))),hard=getHardest(cs),flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{}),max=Math.max(1,...Object.values(counts));app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>${grades.length?`<div class="chips"><button class="chip ${statsGrade===null?'on':''}" onclick="statsGrade=null;renderStats()">All</button>${grades.map(g=>`<button class="chip ${statsGrade===g?'on':''}" onclick="statsGrade='${g}';renderStats()">${statsType==='Boulder'?'V':'5.'}${g}</button>`).join('')}</div>`:''}<div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div><div class="card"><h3>Grade Distribution</h3><div class="bar-wrap" style="margin-top:14px">${Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>`<div class="bar-row"><span>${statsType==='Boulder'?'V':'5.'}${g}</span><div class="bar"><i style="width:${counts[g]/max*100}%"></i></div><b>${counts[g]}</b></div>`).join('')||'<div class="empty">No data</div>'}</div></div></div>`}
+function __original_renderStats(){const all=state.climbs.filter(c=>!c.isProject&&c.type===statsType),grades=[...new Set(all.map(c=>c.grade))].sort((a,b)=>gradeScore(a)-gradeScore(b)),cs=filteredStats(),sessions=new Set(cs.map(c=>dayStart(new Date(c.date)))),hard=getHardest(cs),flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{}),max=Math.max(1,...Object.values(counts));app.innerHTML=`<div class="stack"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>${grades.length?`<div class="chips"><button class="chip ${statsGrade===null?'on':''}" onclick="statsGrade=null;renderStats()">All</button>${grades.map(g=>`<button class="chip ${statsGrade===g?'on':''}" onclick="statsGrade='${g}';renderStats()">${statsType==='Boulder'?'V':'5.'}${g}</button>`).join('')}</div>`:''}<div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div><div class="card"><h3>Grade Distribution</h3><div class="bar-wrap" style="margin-top:14px">${Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>`<div class="bar-row"><span>${statsType==='Boulder'?'V':'5.'}${g}</span><div class="bar"><i style="width:${counts[g]/max*100}%"></i></div><b>${counts[g]}</b></div>`).join('')||'<div class="empty">No data</div>'}</div></div></div>`}
+
+function renderStats(...args) {
+  __original_renderStats(...args);
+
+  const root = document.querySelector('#app') || document.body;
+  const statsHost =
+    root.querySelector('.stats-page') ||
+    root.querySelector('[data-page="stats"]') ||
+    root.querySelector('.stats-content') ||
+    root;
+
+  // Avoid duplicate insertion on rerender.
+  statsHost.querySelectorAll('.climb-stats-charts').forEach(el => el.remove());
+
+  // Respect any existing Boulder/Sport filter used by the stats page.
+  let statsType = null;
+  const activeTypeBtn = root.querySelector('.type-tab.active, .segmented button.active, [data-climb-type].active');
+  if (activeTypeBtn) {
+    statsType = activeTypeBtn.dataset.climbType || activeTypeBtn.textContent.trim();
+  }
+  if (!statsType && typeof state !== 'undefined') {
+    statsType = state.statsType || state.selectedStatsType || state.climbTypeFilter || null;
+  }
+
+  const allClimbs = (typeof climbs !== 'undefined' && Array.isArray(climbs))
+    ? climbs
+    : (typeof loadClimbs === 'function' ? loadClimbs() : []);
+
+  const filtered = allClimbs.filter(c => {
+    if (!statsType) return true;
+    const t = String(c.type || c.climbType || '').toLowerCase();
+    return t === String(statsType).toLowerCase();
+  });
+
+  const gradeCounts = new Map();
+  filtered.forEach(c => {
+    const g = (c.grade || '').trim();
+    if (g) gradeCounts.set(g, (gradeCounts.get(g) || 0) + 1);
+  });
+
+  const gradeOrder = Array.from(gradeCounts.entries()).map(([label, value]) => ({ label, value }));
+  // Preserve sensible grade order for common Boulder/Sport formats.
+  gradeOrder.sort((a,b) => {
+    const va = a.label.match(/^V(\d+)/i), vb = b.label.match(/^V(\d+)/i);
+    if (va && vb) return Number(va[1]) - Number(vb[1]);
+    const sa = a.label.match(/^5\.(\d+)([abcd]?)$/i), sb = b.label.match(/^5\.(\d+)([abcd]?)$/i);
+    if (sa && sb) {
+      const n = Number(sa[1]) - Number(sb[1]);
+      if (n) return n;
+      return (sa[2] || '').localeCompare(sb[2] || '');
+    }
+    return a.label.localeCompare(b.label, undefined, { numeric: true });
+  });
+
+  const incline = countSingleField(filtered, 'incline');
+  const holds = countMultiField(filtered, 'holdTypes');
+  const moves = countMultiField(filtered, 'keyMoves');
+
+  const section = document.createElement('section');
+  section.className = 'climb-stats-charts';
+  section.innerHTML = `
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">Grade Distribution</div>
+      ${makeStatBarChart(gradeOrder, { ariaLabel: 'Grade distribution' })}
+    </div>
+
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">Inclines</div>
+      ${makeStatPieChart(incline, { ariaLabel: 'Incline distribution', centerLabel: 'Climbs' })}
+    </div>
+
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">Hold Types</div>
+      ${makeStatPieChart(holds, { ariaLabel: 'Hold type distribution', centerLabel: 'Uses' })}
+    </div>
+
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">Key Moves</div>
+      ${makeStatPieChart(moves, { ariaLabel: 'Key move distribution', centerLabel: 'Uses' })}
+    </div>
+  `;
+
+  statsHost.appendChild(section);
+}
+
 function todayLog(){return state.logs.find(l=>l.date===dayStart())}
 function upsertLog(date,patch){let l=state.logs.find(x=>x.date===date);if(!l){l={id:uid(),date,calories:null,weight:null,calorieHistory:null};state.logs.push(l)}Object.assign(l,patch)}
 function dateInputValue(ts){const d=new Date(ts),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`}
