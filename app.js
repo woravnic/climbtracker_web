@@ -184,7 +184,8 @@ function statsValues(climbs,field,multi=false){
 function makeVerticalGradeChart(items){
   if(!items||!items.length)return '<div class="chart-empty">No data yet</div>';
   const max=Math.max(1,...items.map(x=>x.value));
-  return `<div class="vertical-grade-chart" role="img" aria-label="Grade distribution"><div class="vertical-grade-bars">${items.map(item=>`<div class="vertical-grade-col"><div class="vertical-grade-value">${item.value}</div><div class="vertical-grade-track"><div class="vertical-grade-fill" style="height:${Math.max(5,item.value/max*100)}%"></div></div><div class="vertical-grade-label">${esc(item.label)}</div></div>`).join('')}</div></div>`;
+  const colors=['#ff8a3d','#ffd166','#06d6a0','#4cc9f0','#4895ef','#7b61ff','#b15cff','#f15bb5','#ef476f'];
+  return `<div class="vertical-grade-chart" role="img" aria-label="Grade distribution"><div class="vertical-grade-bars">${items.map((item,index)=>`<div class="vertical-grade-col"><div class="vertical-grade-value">${item.value}</div><div class="vertical-grade-track"><div class="vertical-grade-fill" style="height:${Math.max(5,item.value/max*100)}%;background:${colors[index%colors.length]}"></div></div><div class="vertical-grade-label">${esc(item.label)}</div></div>`).join('')}</div></div>`;
 }
 function renderStats(){
   const base=state.climbs.filter(c=>!c.isProject&&c.type===statsType);
@@ -205,7 +206,7 @@ function renderStats(){
     ${filterGroup('Key Move',moves,statsMove,'move')}
   </div>
   <div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div>
-  <div class="stats-chart-card"><div class="stats-chart-title">Grade Distribution</div>${makeVerticalGradeChart(gradeItems)}</div>
+  ${statsGrade?'':`<div class="stats-chart-card"><div class="stats-chart-title">Grade Distribution</div>${makeVerticalGradeChart(gradeItems)}</div>`}
   <div class="stats-chart-card"><div class="stats-chart-title">Inclines</div>${makeStatPieChart(inclineItems,{ariaLabel:'Incline distribution',centerLabel:'Climbs'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Hold Types</div>${makeStatPieChart(holdItems,{ariaLabel:'Hold type distribution',centerLabel:'Uses'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Key Moves</div>${makeStatPieChart(moveItems,{ariaLabel:'Key move distribution',centerLabel:'Uses'})}</div></div>`;
