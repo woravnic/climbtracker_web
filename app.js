@@ -217,7 +217,7 @@ function upsertLog(date,patch){let l=state.logs.find(x=>x.date===date);if(!l){l=
 function dateInputValue(ts){const d=new Date(ts),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`}
 function dateInputToDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():dayStart()}
 function selectedCalorieLog(){return state.logs.find(l=>dayStart(new Date(l.date))===calorieEntryDate)}
-function setBodyChartRange(days){bodyChartRange=days;renderBody()}
+function setBodyChartRange(days){bodyChartRange=days;renderBody();requestAnimationFrame(bindBodyChartPoints)}
 
 function installPersistentChartTooltipDismissal(container, hideTooltip) {
   if (!container) return;
