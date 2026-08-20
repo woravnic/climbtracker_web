@@ -195,7 +195,7 @@ function renderStats(){
   const flashes=Object.entries(cs.filter(c=>c.isFlash).reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{})).filter(([,n])=>n>=5).map(([g])=>g).sort((a,b)=>gradeScore(b)-gradeScore(a))[0];
   const counts=cs.reduce((m,c)=>((m[c.grade]=(m[c.grade]||0)+1),m),{});
   const gradeItems=Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>({label:(statsType==='Boulder'?'V':'5.')+g,value:counts[g]}));
-  const inclineItems=countSingleField(cs,'incline'),holdItems=countMultiField(cs,'holdTypes'),moveItems=countMultiField(cs,'keyMoves');
+  const gymItems=countSingleField(cs,'gym'),inclineItems=countSingleField(cs,'incline'),holdItems=countMultiField(cs,'holdTypes'),moveItems=countMultiField(cs,'keyMoves');
   const filterGroup=(title,values,current,key,format=x=>x)=>values.length?`<div class="stats-filter-group"><div class="stats-filter-label">${esc(title)}</div><div class="stats-filter-chips">${values.map(v=>statsFilterChip(format(v),v,current,key)).join('')}</div></div>`:'';
   app.innerHTML=`<div class="stack stats-page"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>
   <div class="card stats-filter-panel"><div class="row between stats-filter-header"><h3>Filters</h3><button class="btn secondary stats-clear-btn" onclick="statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()">Clear</button></div>
@@ -207,6 +207,7 @@ function renderStats(){
   </div>
   <div class="metric-grid"><div class="metric"><small>Total</small><strong>${cs.length}</strong></div><div class="metric"><small>Avg. Climbs / Session</small><strong>${sessions.size?(cs.length/sessions.size).toFixed(1):'—'}</strong></div><div class="metric"><small>Hardest</small><strong>${hard?displayGrade(hard):'—'}</strong></div><div class="metric"><small>Flash Grade</small><strong>${flashes?(statsType==='Boulder'?'V':'5.')+flashes:'—'}</strong></div><div class="metric"><small>Avg. Attempts</small><strong>${cs.length?(cs.reduce((n,c)=>n+c.attempts,0)/cs.length).toFixed(1):'—'}</strong></div><div class="metric"><small>Flash Rate</small><strong>${cs.length?Math.round(cs.filter(c=>c.isFlash).length/cs.length*100)+'%':'—'}</strong></div></div>
   ${statsGrade?'':`<div class="stats-chart-card"><div class="stats-chart-title">Grade Distribution</div>${makeVerticalGradeChart(gradeItems)}</div>`}
+  <div class="stats-chart-card"><div class="stats-chart-title">Climbs by Gym</div>${makeStatPieChart(gymItems,{ariaLabel:'Climbs by gym',centerLabel:'Climbs'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Inclines</div>${makeStatPieChart(inclineItems,{ariaLabel:'Incline distribution',centerLabel:'Climbs'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Hold Types</div>${makeStatPieChart(holdItems,{ariaLabel:'Hold type distribution',centerLabel:'Uses'})}</div>
   <div class="stats-chart-card"><div class="stats-chart-title">Key Moves</div>${makeStatPieChart(moveItems,{ariaLabel:'Key move distribution',centerLabel:'Uses'})}</div></div>`;
@@ -249,7 +250,7 @@ function bodyWeightTrendLabel(){
 }
 function bodyScatterPlot(field,unit){
   const days=bodyChartRange,end=dayStart(),start=end-(days-1)*86400000;
-  const points=state.logs.filter(l=>{const d=dayStart(new Date(l.date)),v=l[field];return d>=start&&d<=end&&v!=null&&Number.isFinite(Number(v))}).map(l=>({date:dayStart(new Date(l.date)),value:Number(l[field])})).sort((a,b)=>a.date-b.date);
+  const points=state.logs.filter(l=>{const d=dayStart(new Date(l.date)),v=l[field];return d>=start&&d<=end&&(field!=='calories'||d<end)&&v!=null&&Number.isFinite(Number(v))}).map(l=>({date:dayStart(new Date(l.date)),value:Number(l[field])})).sort((a,b)=>a.date-b.date);
   if(!points.length)return `<div class="chart-empty">No ${field==='calories'?'calorie':'weight'} data in this period.</div>`;
   const W=360,H=210,pad={l:48,r:14,t:14,b:34},plotW=W-pad.l-pad.r,plotH=H-pad.t-pad.b;
   const regression=field==='weight'&&days===30?bodyWeightRegression(30):null;
