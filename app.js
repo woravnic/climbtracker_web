@@ -5,7 +5,7 @@ const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 const DRIVE_BACKUP_NAME='Climbtracker_Backup.csv';
 let googleTokenClient=null,googleRestoreTokenClient=null;
 const defaults={climbs:[],logs:[],gyms:[],calorieGoal:0};
-let state=load(),tab='log',logType='Boulder',projectsType='Boulder',statsType='Boulder',statsGrade=null,statsGym=null,statsIncline=null,statsHold=null,statsMove=null,calorieEntryDate=dayStart(),bodyChartRange=7;
+let state=load(),tab='log',logType='Boulder',projectsType='Boulder',statsType='Boulder',statsSportStyle=null,statsGrade=null,statsGym=null,statsIncline=null,statsHold=null,statsMove=null,calorieEntryDate=dayStart(),bodyChartRange=7;
 const inclines=['Slab','Vertical','Overhang','Roof','Chimney'];
 const holds=['Jug','Crimp','Sloper','Pinch','Pocket','Volume','Crack','Arete'];
 const moves=['Cross','Gaston','Campus','Throw','Lockoff','Heel Hook','Toe Hook','Drop Knee','High Foot','Kneebar','Bat-Hang','Dyno','Paddle','Step-Up','Lache','Coordo','Press','Mantle','Balance','Fist Jam','Hand Jam'];
@@ -181,6 +181,7 @@ function projectAttempt(id){const c=state.climbs.find(x=>x.id===id);if(!c)return
 function sendProject(id){const c=state.climbs.find(x=>x.id===id);c.attempts++;c.isProject=false;c.isFlash=false;c.date=Date.now();save()}
 function filteredStats(){return state.climbs.filter(c=>{
   if(c.isProject||c.type!==statsType)return false;
+  if(statsSportStyle&&c.sportStyle!==statsSportStyle)return false;
   if(statsGrade&&c.grade!==statsGrade)return false;
   if(statsGym&&(c.gym||'')!==statsGym)return false;
   if(statsIncline&&(c.incline||'')!==statsIncline)return false;
@@ -194,10 +195,10 @@ function __original_renderStats(){const all=state.climbs.filter(c=>!c.isProject&
 
 
 function toggleStatsFilter(key,value){
-  const map={grade:'statsGrade',gym:'statsGym',incline:'statsIncline',hold:'statsHold',move:'statsMove'};
-  const current={grade:statsGrade,gym:statsGym,incline:statsIncline,hold:statsHold,move:statsMove}[key];
+  const current={sportStyle:statsSportStyle,grade:statsGrade,gym:statsGym,incline:statsIncline,hold:statsHold,move:statsMove}[key];
   const next=current===value?null:value;
-  if(key==='grade')statsGrade=next;
+  if(key==='sportStyle')statsSportStyle=next;
+  else if(key==='grade')statsGrade=next;
   else if(key==='gym')statsGym=next;
   else if(key==='incline')statsIncline=next;
   else if(key==='hold')statsHold=next;
@@ -227,8 +228,9 @@ function renderStats(){
   const gradeItems=Object.keys(counts).sort((a,b)=>gradeScore(a)-gradeScore(b)).map(g=>({label:(statsType==='Boulder'?'V':'5.')+g,value:counts[g]}));
   const gymItems=countSingleField(cs,'gym'),inclineItems=countSingleField(cs,'incline'),holdItems=countMultiField(cs,'holdTypes'),moveItems=countMultiField(cs,'keyMoves');
   const filterGroup=(title,values,current,key,format=x=>x)=>values.length?`<div class="stats-filter-group"><div class="stats-filter-label">${esc(title)}</div><div class="stats-filter-chips">${values.map(v=>statsFilterChip(format(v),v,current,key)).join('')}</div></div>`:'';
-  app.innerHTML=`<div class="stack stats-page"><div class="segmented"><button onclick="statsType='Boulder';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>
-  <div class="card stats-filter-panel"><div class="row between stats-filter-header"><h3>Filters</h3><button class="btn secondary stats-clear-btn" onclick="statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()">Clear</button></div>
+  app.innerHTML=`<div class="stack stats-page"><div class="segmented"><button onclick="statsType='Boulder';statsSportStyle=statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Boulder'?'active':''}">Boulder</button><button onclick="statsType='Sport';statsSportStyle=statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()" class="${statsType==='Sport'?'active':''}">Sport</button></div>
+  <div class="card stats-filter-panel"><div class="row between stats-filter-header"><h3>Filters</h3><button class="btn secondary stats-clear-btn" onclick="statsSportStyle=statsGrade=statsGym=statsIncline=statsHold=statsMove=null;renderStats()">Clear</button></div>
+    ${statsType==='Sport'?filterGroup('Sport Style',sportStyles,statsSportStyle,'sportStyle'):''}
     ${filterGroup('Grade',grades,statsGrade,'grade',g=>(statsType==='Boulder'?'V':'5.')+g)}
     ${filterGroup('Gym',gyms,statsGym,'gym')}
     ${filterGroup('Incline',incs,statsIncline,'incline')}
